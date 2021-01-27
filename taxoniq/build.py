@@ -251,6 +251,9 @@ def build_trees():
 
     # TODO: pack all bit fields into one byte
     marisa_trie.RecordTrie("IBBB", taxa_loader()).save('taxa.marisa')
+    for proc in dl_procs:
+        if proc.wait() != os.EX_OK:
+            raise Exception(f"{proc} failed")
     marisa_trie.RecordTrie("I", accession2taxid_loader()).save('accession2taxid.marisa')
 
     names = collections.defaultdict(dict)
