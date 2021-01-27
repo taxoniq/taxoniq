@@ -1,0 +1,4 @@
+include taxoniq/*.marisa
+include taxoniq/*.zstd
+include *.rst
+recursive-include test *
