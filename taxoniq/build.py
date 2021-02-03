@@ -338,7 +338,7 @@ def fetch_file(url):
 
 def download_refseq_accessions():
     # See https://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/#files
-    assembly_summary_url = "http://ftp.ncbi.nlm.nih.gov/genomes/refseq/assembly_summary_refseq.txt"
+    assembly_summary_url = "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/assembly_summary_refseq.txt"
     assembly_summary_fields = ("assembly_accession", "bioproject", "biosample", "wgs_master", "refseq_category",
                                "taxid", "species_taxid", "organism_name", "infraspecific_name", "isolate",
                                "version_status", "assembly_level", "release_type", "genome_rep", "seq_rel_date",
