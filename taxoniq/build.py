@@ -1,6 +1,4 @@
 import os
-import sys
-import inspect
 import collections
 import subprocess
 import enum
@@ -11,6 +9,8 @@ import io
 import marisa_trie
 import zstandard
 
+from . import Rank
+
 logger = logging.getLogger(__name__)
 
 Rank = enum.Enum(
@@ -20,6 +20,7 @@ Rank = enum.Enum(
      "strain subclass subcohort subfamily subgenus subkingdom suborder subphylum subsection subspecies subtribe "
      "subvariety superclass superfamily superkingdom superorder superphylum tribe varietas no_rank")
 )
+
 
 class TaxDumpReader:
     def __init__(self):
@@ -84,6 +85,7 @@ class DivisionsReader(TaxDumpReader):
         ("comments", str)
     ]
 
+
 class GeneticCodeReader(TaxDumpReader):
     table_name = "gencode"
     fields = [
@@ -93,6 +95,7 @@ class GeneticCodeReader(TaxDumpReader):
         ("cde", str, "translation table for this genetic code"),
         ("starts", str, "start codons for this genetic code")
     ]
+
 
 class DeletedNodesReader(TaxDumpReader):
     table_name = "delnodes"
@@ -123,6 +126,7 @@ class CitationsReader(TaxDumpReader):
         ("taxid_list", str, "list of node ids separated by a single space")
     ]
 
+
 class TypeOfTypeReader(TaxDumpReader):
     table_name = "typeoftype"
     fields = [
@@ -136,12 +140,14 @@ class TypeOfTypeReader(TaxDumpReader):
         ("description", str, "descriptive text")
     ]
 
+
 class HostReader(TaxDumpReader):
     table_name = "host"
     fields = [
         ("tax_id", str, "node id"),
         ("potential_hosts", str, "theoretical host list separated by comma ','")
     ]
+
 
 class TypeMaterialReader(TaxDumpReader):
     table_name = "typematerial"
@@ -172,6 +178,7 @@ class RankedLineageReader(TaxDumpReader):
         ("superkingdom_name", str, "superkingdom (domain) name when available")
     ]
 
+
 class FullNameLineageReader(TaxDumpReader):
     table_name = "fullnamelineage"
     fields = [
@@ -180,6 +187,7 @@ class FullNameLineageReader(TaxDumpReader):
         ("lineage", str, ("sequence of sncestor names separated by semicolon ';' denoting nodes' ancestors starting "
                           "from the most distant one and ending with the immediate one"))
     ]
+
 
 class TaxIdLineageReader(TaxDumpReader):
     table_name = "taxidlineage"
@@ -205,6 +213,7 @@ def taxa_loader():
         rows_processed += 1
         if rows_processed % 100000 == 0:
             logger.info("Processed %d taxon rows", rows_processed)
+
 
 def accession2taxid_loader():
     accessions_in_nt = set()
@@ -234,7 +243,7 @@ def accession2taxid_loader():
                                 rows_processed, int(100*rows_loaded/rows_processed))
 
 
-def build_trees():
+def build_trees(destdir=os.path.dirname(__file__)):
     logging.basicConfig(level=logging.INFO)
 
     dl_procs = []
@@ -250,18 +259,20 @@ def build_trees():
         subprocess.run(cmd, shell=True)
 
     # TODO: pack all bit fields into one byte
-    marisa_trie.RecordTrie("IBBB", taxa_loader()).save('taxa.marisa')
+    marisa_trie.RecordTrie("IBBB", taxa_loader()).save(os.path.join(destdir, 'taxa.marisa'))
     for proc in dl_procs:
         if proc.wait() != os.EX_OK:
             raise Exception(f"{proc} failed")
-    marisa_trie.RecordTrie("I", accession2taxid_loader()).save('accession2taxid.marisa')
+    marisa_trie.RecordTrie("I", accession2taxid_loader()).save(os.path.join(destdir, 'accession2taxid.marisa'))
 
-    names = collections.defaultdict(dict)
+    names, sn2taxid = collections.defaultdict(dict), {}
     for row in TaxonomyNamesReader():
         if row["tax_id"] in names and row["name_class"] in names[row["tax_id"]]:
             continue
         if row["name_class"] in {"scientific name", "common name", "genbank common name", "blast name"}:
             names[row["tax_id"]][row["name_class"]] = row["name"]
+        if row["name_class"] == "scientific name":
+            sn2taxid[row["name"]] = int(row["tax_id"])
     taxid2name_array = sorted(((tax_id, row["scientific name"]) for tax_id, row in names.items()), key=lambda i: i[1])
     taxid2pos = {}
     names = io.BytesIO()
@@ -269,10 +280,13 @@ def build_trees():
         taxid2pos[tax_id] = names.tell()
         names.write(scientific_name.encode())
         names.write(b"\n")
-    with open("scientific_names.zstd", "wb") as fh:
+    with open(os.path.join(destdir, "scientific_names.zstd"), "wb") as fh:
         fh.write(zstandard.compress(names.getvalue()))
 
-    marisa_trie.RecordTrie("I", [(str(tid), (pos, )) for tid, pos in taxid2pos.items()]).save("scientific_names.marisa")
+    t = marisa_trie.RecordTrie("I", [(str(tid), (pos, )) for tid, pos in taxid2pos.items()])
+    t.save(os.path.join(destdir, "scientific_names.marisa"))
+    t = marisa_trie.RecordTrie("I", [(sn, (tid, )) for sn, tid in sn2taxid.items()])
+    t.save(os.path.join(destdir, "sn2taxid.marisa"))
 
     # TODO: write common names
     def common_names_loader(names):
@@ -284,4 +298,72 @@ def build_trees():
             elif "common name" in tax_names:
                 yield (str(tax_id), (tax_names["common name"].encode(), ))
 
-    # TODO: write (tax_id -> refseq accessions) mapping & possibly rank accessions by informativeness
+# TODO: rank accessions by informativeness
+# FIXME: neither genbank nor refseq id represented in nt
+# in assemblies: 6239 6239 Caenorhabditis elegans reference genome ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/002/985/GCF_000002985.6_WBcel235
+#         II Chromosome BX284602.5 NC_003280.10 15279421
+# in nt: >AC182480.1 Caenorhabditis elegans chromosome II, complete sequence
+from contextlib import closing
+import urllib3, concurrent.futures
+from taxoniq import Taxon
+from collections import defaultdict
+
+def process_assembly_report(assembly_summary):
+    ftp_path = assembly_summary["ftp_path"]
+    assembly_report_url = f"{ftp_path.replace('ftp', 'https', 1)}/{os.path.basename(ftp_path)}_assembly_report.txt"
+    assembly_report_fields = ("sequence_name", "sequence_role", "assigned_molecule", "assigned_molecule_location_type",
+                              "genbank_accn", "relationship", "refseq_accn", "assembly_unit", "sequence_length",
+                              "ucsc_style_name")
+
+    molecules = []
+    with open(fetch_file(assembly_report_url)) as assembly_report:
+        for line in assembly_report:
+            if line.startswith("#"):
+                continue
+            molecule_summary = dict(zip(assembly_report_fields, line.strip().split("\t")))
+            if molecule_summary["sequence_role"] != "assembled-molecule":
+                continue
+            molecule_summary.update(assembly_summary)
+            molecules.append(molecule_summary)
+    return molecules
+
+http = urllib3.PoolManager()
+def fetch_file(url):
+    local_filename = "/mnt/downloads/" + os.path.basename(url)
+    if not os.path.exists(local_filename):
+        with open(local_filename, "w") as fh:
+            fh.write(http.request("GET", url).data.decode())
+    return local_filename
+
+
+def download_refseq_accessions():
+    # See https://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/#files
+    assembly_summary_url = "http://ftp.ncbi.nlm.nih.gov/genomes/refseq/assembly_summary_refseq.txt"
+    assembly_summary_fields = ("assembly_accession", "bioproject", "biosample", "wgs_master", "refseq_category",
+                               "taxid", "species_taxid", "organism_name", "infraspecific_name", "isolate",
+                               "version_status", "assembly_level", "release_type", "genome_rep", "seq_rel_date",
+                               "asm_name", "submitter", "gbrs_paired_asm", "paired_asm_comp", "ftp_path",
+                               "excluded_from_refseq", "relation_to_type_material")
+    a2t=Taxon._get_db(Taxon, "a2t")
+    gb, mismatch = defaultdict(int), defaultdict(int)
+    assembly_summaries = []
+    with open(fetch_file(assembly_summary_url)) as assembly_summary_fh:
+        for line in assembly_summary_fh:
+            if line.startswith("#"):
+                continue
+            assembly_summary = dict(zip(assembly_summary_fields, line.strip().split("\t")))
+            if assembly_summary["release_type"] != "Major":
+                continue
+            if assembly_summary["refseq_category"] not in {"reference genome", "representative genome"}:
+                continue
+            assembly_summaries.append(assembly_summary)
+    for assembly_molecules in concurrent.futures.ThreadPoolExecutor().map(process_assembly_report, assembly_summaries):
+        for assembly_molecule in assembly_molecules:
+            genbank_accn = assembly_molecule["genbank_accn"]
+            if genbank_accn.endswith(".1"):
+                genbank_accn = genbank_accn[:-len(".1")]
+            if genbank_accn in a2t:
+                gb[genbank_accn] += 1
+            else:
+                mismatch[genbank_accn] += 1
+    print("gb", len(gb), "mismatch", len(mismatch))

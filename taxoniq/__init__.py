@@ -31,6 +31,7 @@ class Taxon:
     _db_files = {
         "taxa": (marisa_trie.RecordTrie("IBBB"), os.path.join(os.path.dirname(__file__), "taxa.marisa")),
         "a2t": (marisa_trie.RecordTrie("I"), os.path.join(os.path.dirname(__file__), "accession2taxid.marisa")),
+        "sn2t": (marisa_trie.RecordTrie("I"), os.path.join(os.path.dirname(__file__), "sn2taxid.marisa")),
         "scientific_names_pos": (marisa_trie.RecordTrie("I"), os.path.join(os.path.dirname(__file__), "scientific_names_pos.marisa")),
         "scientific_names": (zstandard, os.path.join(os.path.dirname(__file__), "scientific_names.zstd")),
         "common_names_pos": (marisa_trie.RecordTrie("I"), os.path.join(os.path.dirname(__file__), "common_names_pos.marisa")),
@@ -43,10 +44,12 @@ class Taxon:
             raise TaxoniqException("Expected exactly one of tax_id, accession_id, or scientific_name to be set")
         if tax_id is not None:
             self.tax_id = tax_id
-            self.parent, rank, self.division_id, self.specified_species = self._get_db("taxa")[str(self.tax_id)][0]
-            self.rank = Rank(rank)
         elif accession_id is not None:
             self.tax_id = self._get_db("a2t")[accession_id][0][0]
+        elif scientific_name is not None:
+            self.tax_id = self._get_db("sn2t")[scientific_name][0][0]
+        self._parent, rank, self.division_id, self.specified_species = self._get_db("taxa")[str(self.tax_id)][0]
+        self.rank = Rank(rank)
         self._str_attr_cache = {}
 
     def _pack_accession_id(self, accession_id):
@@ -90,7 +93,7 @@ class Taxon:
     def lineage(self) -> 'List[Taxon]':
         lineage = [self]
         while lineage[-1].tax_id != 1:
-            lineage.append(Taxon(lineage[-1].parent))
+            lineage.append(Taxon(lineage[-1]._parent))
         return lineage
 
     @property
@@ -101,6 +104,10 @@ class Taxon:
         return list(filter(lambda t: t.rank in self.common_ranks, self.lineage))
 
     @property
+    def parent(self) -> 'Taxon':
+        return Taxon(self._parent)
+
+    @property
     def description(self) -> str:
         '''
         Opening paragraph on Wikipedia
@@ -108,11 +115,11 @@ class Taxon:
         raise NotImplementedError()
 
     @property
-    def has_refseq(self) -> bool:
+    def refseq_reference_genome_accessions(self) -> List[Accession]:
         raise NotImplementedError()
 
     @property
-    def refseq_accessions(self) -> List[Accession]:
+    def refseq_representative_genome_accessions(self) -> List[Accession]:
         raise NotImplementedError()
 
     def url(self):
@@ -120,6 +127,9 @@ class Taxon:
         URL of the NCBI Taxonomy web page for this taxon
         '''
         raise NotImplementedError()
+
+    def __eq__(self, other):
+        return self.tax_id == other.tax_id
 
     def __repr__(self):
         return "{}.{}({})".format(self.__module__, self.__class__.__name__, self.tax_id)
