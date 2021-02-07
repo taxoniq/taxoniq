@@ -14,7 +14,7 @@ test:
 docs:
 	sphinx-build docs docs/html
 
-install: clean version
+install: clean version build
 	pip install wheel
 	python setup.py bdist_wheel
 	pip install --upgrade dist/*.whl
