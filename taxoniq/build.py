@@ -1,25 +1,21 @@
 import os
-import collections
 import subprocess
 import enum
 import gzip
 import logging
 import io
+import concurrent.futures
+from collections import defaultdict
 
 import marisa_trie
 import zstandard
+import urllib3
 
-from . import Rank
+from . import Rank, Taxon
 
 logger = logging.getLogger(__name__)
 
-Rank = enum.Enum(
-    "rank",
-    ("biotype clade class cohort family forma forma_specialis genotype genus infraclass infraorder isolate kingdom "
-     "morph order parvorder pathogroup phylum section series serogroup serotype species species_group species_subgroup "
-     "strain subclass subcohort subfamily subgenus subkingdom suborder subphylum subsection subspecies subtribe "
-     "subvariety superclass superfamily superkingdom superorder superphylum tribe varietas no_rank")
-)
+http = urllib3.PoolManager()
 
 
 class TaxDumpReader:
@@ -243,6 +239,38 @@ def accession2taxid_loader():
                                 rows_processed, int(100*rows_loaded/rows_processed))
 
 
+def common_names_loader(names):
+    for tax_id, tax_names in names.items():
+        if "blast name" in tax_names:
+            yield (tax_id, tax_names["blast name"])
+        elif "genbank common name" in tax_names:
+            yield (tax_id, tax_names["genbank common name"])
+        elif "common name" in tax_names:
+            yield (tax_id, tax_names["common name"])
+
+
+def write_taxid_to_string_index(mapping, index_name, destdir):
+    taxid2pos = {}
+    string_db = io.BytesIO()
+    for tax_id, string_value in mapping:
+        taxid2pos[tax_id] = string_db.tell()
+        string_db.write(string_value.encode())
+        string_db.write(b"\n")
+    with open(os.path.join(destdir, f"{index_name}.zstd"), "wb") as fh:
+        fh.write(zstandard.compress(string_db.getvalue()))
+
+    t = marisa_trie.RecordTrie("I", [(str(tid), (pos, )) for tid, pos in taxid2pos.items()])
+    t.save(os.path.join(destdir, f"{index_name}.marisa"))
+
+
+def fetch_file(url):
+    local_filename = "/mnt/downloads/" + os.path.basename(url)
+    if not os.path.exists(local_filename):
+        with open(local_filename, "w") as fh:
+            fh.write(http.request("GET", url).data.decode())
+    return local_filename
+
+
 def build_trees(destdir=os.path.dirname(__file__)):
     logging.basicConfig(level=logging.INFO)
 
@@ -265,7 +293,7 @@ def build_trees(destdir=os.path.dirname(__file__)):
             raise Exception(f"{proc} failed")
     marisa_trie.RecordTrie("I", accession2taxid_loader()).save(os.path.join(destdir, 'accession2taxid.marisa'))
 
-    names, sn2taxid = collections.defaultdict(dict), {}
+    names, sn2taxid = defaultdict(dict), {}
     for row in TaxonomyNamesReader():
         if row["tax_id"] in names and row["name_class"] in names[row["tax_id"]]:
             continue
@@ -274,39 +302,11 @@ def build_trees(destdir=os.path.dirname(__file__)):
         if row["name_class"] == "scientific name":
             sn2taxid[row["name"]] = int(row["tax_id"])
     taxid2name_array = sorted(((tax_id, row["scientific name"]) for tax_id, row in names.items()), key=lambda i: i[1])
-    taxid2pos = {}
-    names = io.BytesIO()
-    for tax_id, scientific_name in taxid2name_array:
-        taxid2pos[tax_id] = names.tell()
-        names.write(scientific_name.encode())
-        names.write(b"\n")
-    with open(os.path.join(destdir, "scientific_names.zstd"), "wb") as fh:
-        fh.write(zstandard.compress(names.getvalue()))
-
-    t = marisa_trie.RecordTrie("I", [(str(tid), (pos, )) for tid, pos in taxid2pos.items()])
-    t.save(os.path.join(destdir, "scientific_names.marisa"))
+    write_taxid_to_string_index(mapping=taxid2name_array, index_name="scientific_names", destdir=destdir)
     t = marisa_trie.RecordTrie("I", [(sn, (tid, )) for sn, tid in sn2taxid.items()])
     t.save(os.path.join(destdir, "sn2taxid.marisa"))
+    write_taxid_to_string_index(mapping=common_names_loader(names), index_name="common_names", destdir=destdir)
 
-    # TODO: write common names
-    def common_names_loader(names):
-        for tax_id, tax_names in names.items():
-            if "blast name" in tax_names:
-                yield (str(tax_id), (tax_names["blast name"].encode(), ))
-            elif "genbank common name" in tax_names:
-                yield (str(tax_id), (tax_names["genbank common name"].encode(), ))
-            elif "common name" in tax_names:
-                yield (str(tax_id), (tax_names["common name"].encode(), ))
-
-# TODO: rank accessions by informativeness
-# FIXME: neither genbank nor refseq id represented in nt
-# in assemblies: 6239 6239 Caenorhabditis elegans reference genome ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/002/985/GCF_000002985.6_WBcel235
-#         II Chromosome BX284602.5 NC_003280.10 15279421
-# in nt: >AC182480.1 Caenorhabditis elegans chromosome II, complete sequence
-from contextlib import closing
-import urllib3, concurrent.futures
-from taxoniq import Taxon
-from collections import defaultdict
 
 def process_assembly_report(assembly_summary):
     ftp_path = assembly_summary["ftp_path"]
@@ -327,24 +327,22 @@ def process_assembly_report(assembly_summary):
             molecules.append(molecule_summary)
     return molecules
 
-http = urllib3.PoolManager()
-def fetch_file(url):
-    local_filename = "/mnt/downloads/" + os.path.basename(url)
-    if not os.path.exists(local_filename):
-        with open(local_filename, "w") as fh:
-            fh.write(http.request("GET", url).data.decode())
-    return local_filename
 
-
-def download_refseq_accessions():
+def download_refseq_accessions(destdir=os.path.dirname(__file__)):
     # See https://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/#files
+    # FIXME: neither genbank nor refseq id represented in nt
+    # in assemblies: 6239 6239 Caenorhabditis elegans reference genome
+    # ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/002/985/GCF_000002985.6_WBcel235
+    #         II Chromosome BX284602.5 NC_003280.10 15279421
+    # in nt: >AC182480.1 Caenorhabditis elegans chromosome II, complete sequence
     assembly_summary_url = "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/assembly_summary_refseq.txt"
     assembly_summary_fields = ("assembly_accession", "bioproject", "biosample", "wgs_master", "refseq_category",
                                "taxid", "species_taxid", "organism_name", "infraspecific_name", "isolate",
                                "version_status", "assembly_level", "release_type", "genome_rep", "seq_rel_date",
                                "asm_name", "submitter", "gbrs_paired_asm", "paired_asm_comp", "ftp_path",
                                "excluded_from_refseq", "relation_to_type_material")
-    a2t=Taxon._get_db(Taxon, "a2t")
+    a2t = Taxon._get_db(Taxon, "a2t")
+    taxa_with_refseq = defaultdict(int)
     gb, mismatch = defaultdict(int), defaultdict(int)
     assembly_summaries = []
     with open(fetch_file(assembly_summary_url)) as assembly_summary_fh:
@@ -354,16 +352,33 @@ def download_refseq_accessions():
             assembly_summary = dict(zip(assembly_summary_fields, line.strip().split("\t")))
             if assembly_summary["release_type"] != "Major":
                 continue
-            if assembly_summary["refseq_category"] not in {"reference genome", "representative genome"}:
-                continue
             assembly_summaries.append(assembly_summary)
+    taxid2gbaccn = {}
+    duplicate_assy_taxids = defaultdict(set)
     for assembly_molecules in concurrent.futures.ThreadPoolExecutor().map(process_assembly_report, assembly_summaries):
+        accessions_for_taxon = []
         for assembly_molecule in assembly_molecules:
+            if assembly_molecule["taxid"] in taxid2gbaccn:
+                # TODO: discard non-representative assemblies for taxa that have representative/reference ones
+                # TODO: investigate mismatch and duplicate assemblies
+                print(f"WARNING: multiple refseq assemblies found for {assembly_molecule}")
+                duplicate_assy_taxids[assembly_molecule["taxid"]].add(taxid2gbaccn[assembly_molecule["taxid"]])
+                duplicate_assy_taxids[assembly_molecule["taxid"]].add(assembly_molecule["genbank_accn"])
+            taxa_with_refseq[assembly_molecule["taxid"]] += 1
             genbank_accn = assembly_molecule["genbank_accn"]
             if genbank_accn.endswith(".1"):
                 genbank_accn = genbank_accn[:-len(".1")]
             if genbank_accn in a2t:
                 gb[genbank_accn] += 1
+                accessions_for_taxon.append(genbank_accn)
             else:
                 mismatch[genbank_accn] += 1
-    print("gb", len(gb), "mismatch", len(mismatch))
+        taxid2gbaccn[assembly_molecule["taxid"]] = ",".join(accessions_for_taxon)
+    print("taxa with refseq:", len(taxa_with_refseq), sum(taxa_with_refseq.values()))
+    print("gb accessions found in nt:", len(gb), sum(gb.values()))
+    print("gb accessions not found in nt:", len(mismatch), sum(mismatch.values()))
+    write_taxid_to_string_index(mapping=taxid2gbaccn.items(), index_name="taxid2refseq", destdir=destdir)
+
+# TODO: load WoL tree distance information
+# TODO: rank accessions by informativeness
+# TODO: load virus host and refseq data (Viruses_RefSeq_and_neighbors_genome_data.tab)

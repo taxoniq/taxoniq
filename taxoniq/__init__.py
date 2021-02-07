@@ -32,9 +32,9 @@ class Taxon:
         "taxa": (marisa_trie.RecordTrie("IBBB"), os.path.join(os.path.dirname(__file__), "taxa.marisa")),
         "a2t": (marisa_trie.RecordTrie("I"), os.path.join(os.path.dirname(__file__), "accession2taxid.marisa")),
         "sn2t": (marisa_trie.RecordTrie("I"), os.path.join(os.path.dirname(__file__), "sn2taxid.marisa")),
-        "scientific_names_pos": (marisa_trie.RecordTrie("I"), os.path.join(os.path.dirname(__file__), "scientific_names_pos.marisa")),
+        "scientific_names_pos": (marisa_trie.RecordTrie("I"), os.path.join(os.path.dirname(__file__), "scientific_names.marisa")),
         "scientific_names": (zstandard, os.path.join(os.path.dirname(__file__), "scientific_names.zstd")),
-        "common_names_pos": (marisa_trie.RecordTrie("I"), os.path.join(os.path.dirname(__file__), "common_names_pos.marisa")),
+        "common_names_pos": (marisa_trie.RecordTrie("I"), os.path.join(os.path.dirname(__file__), "common_names.marisa")),
         "common_names": (zstandard, os.path.join(os.path.dirname(__file__), "common_names.zstd")),
     }
     common_ranks = {Rank[i] for i in ("species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom")}
@@ -115,12 +115,35 @@ class Taxon:
         raise NotImplementedError()
 
     @property
+    def host(self) -> 'Taxon':
+        raise NotImplementedError()
+
+    @property
+    def refseq_genome_accessions(self) -> List[Accession]:
+        raise NotImplementedError()
+
+    @property
     def refseq_reference_genome_accessions(self) -> List[Accession]:
         raise NotImplementedError()
 
     @property
     def refseq_representative_genome_accessions(self) -> List[Accession]:
         raise NotImplementedError()
+
+    def lca(self, others):
+        raise NotImplementedError()
+
+    def distance(self, other):
+        '''
+        Phylogenetic distance between this taxon and the other as computed by WoL
+        '''
+        raise NotImplementedError()
+
+    def closest_taxon_with_refseq_genome(self):
+        '''
+        Returns a taxon closest by phylogenetic distance as computed by WoL and with a refseq genome associated
+        '''
+        pass
 
     def url(self):
         '''

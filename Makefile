@@ -8,8 +8,8 @@ build:
 lint:
 	flake8 $$(python3 setup.py --name)
 
-test: lint
-	coverage run --source=$$(python3 setup.py --name) ./test/test.py -v
+test:
+	python3 -m unittest discover --start-directory test --top-level-directory . --verbose
 
 docs:
 	sphinx-build docs docs/html
@@ -22,6 +22,7 @@ install: clean version
 clean:
 	-rm -rf build dist
 	-rm -rf *.egg-info
+	-rm -rf $$(python3 setup.py --name)/*.{zstd,marisa}
 
 .PHONY: lint test docs install clean
 
