@@ -1,7 +1,6 @@
 import os
 from typing import List
 from enum import Enum
-from contextlib import closing
 
 import marisa_trie
 import zstandard
@@ -86,14 +85,6 @@ class Accession(DatabaseService):
         accession_id = accession_id.replace("_", "")
         return accession_id
 
-    def _get_sequence(self):
-        blast_db_volume.seek(self._db_offset)
-        seq = io.StringIO()
-        twobit_seq = blast_db_volume.read((self.length // 4) + 1)
-        for byte in twobit_seq:
-            seq.write(twobit2ascii_byte_lut[byte])
-        return seq.getvalue()[:self.length]
-
     def get_from_s3(self):
         """
         Returns a file-like object streaming the nucleotide sequence for this accession from the AWS S3 NCBI BLAST
@@ -117,17 +108,20 @@ class Taxon(DatabaseService):
     """
     FIXME: add docstring
     """
+    _db_dir = os.path.dirname(__file__)
     _db_files = {
-        "taxa": (marisa_trie.RecordTrie("IBBB"), os.path.join(os.path.dirname(__file__), "taxa.marisa")),
-        "sn2t": (marisa_trie.RecordTrie("I"), os.path.join(os.path.dirname(__file__), "sn2taxid.marisa")),
-        "scientific_names_pos": (marisa_trie.RecordTrie("I"), os.path.join(os.path.dirname(__file__), "scientific_names.marisa")),
-        "scientific_names": (zstandard, os.path.join(os.path.dirname(__file__), "scientific_names.zstd")),
-        "common_names_pos": (marisa_trie.RecordTrie("I"), os.path.join(os.path.dirname(__file__), "common_names.marisa")),
-        "common_names": (zstandard, os.path.join(os.path.dirname(__file__), "common_names.zstd")),
-        "taxid2refseqs_pos": (marisa_trie.RecordTrie("I"), os.path.join(os.path.dirname(__file__), "taxid2refseq.marisa")),
-        "taxid2refseqs": (zstandard, os.path.join(os.path.dirname(__file__), "taxid2refseq.zstd")),
+        "taxa": (marisa_trie.RecordTrie("IBBB"), os.path.join(_db_dir, "taxa.marisa")),
+        "sn2t": (marisa_trie.RecordTrie("I"), os.path.join(_db_dir, "sn2taxid.marisa")),
+        "scientific_names_pos": (marisa_trie.RecordTrie("I"), os.path.join(_db_dir, "scientific_names.marisa")),
+        "scientific_names": (zstandard, os.path.join(_db_dir, "scientific_names.zstd")),
+        "common_names_pos": (marisa_trie.RecordTrie("I"), os.path.join(_db_dir, "common_names.marisa")),
+        "common_names": (zstandard, os.path.join(_db_dir, "common_names.zstd")),
+        "taxid2refseqs_pos": (marisa_trie.RecordTrie("I"), os.path.join(_db_dir, "taxid2refseq.marisa")),
+        "taxid2refseqs": (zstandard, os.path.join(_db_dir, "taxid2refseq.zstd")),
     }
-    common_ranks = {Rank[i] for i in ("species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom")}
+    common_ranks = {
+        Rank[i] for i in ("species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom")
+    }
 
     def __init__(self, tax_id: int = None, accession_id: str = None, scientific_name: str = None):
         if sum(x is not None for x in (tax_id, accession_id, scientific_name)) != 1:
@@ -173,7 +167,7 @@ class Taxon(DatabaseService):
     @property
     def ranked_lineage(self) -> 'List[Taxon]':
         '''
-        Lineage of well-established taxonomic ranks (species, genus, family, order, class, phylum, kingdom, superkingdom)
+        Lineage of main taxonomic ranks (species, genus, family, order, class, phylum, kingdom, superkingdom)
         '''
         return list(filter(lambda t: t.rank in self.common_ranks, self.lineage))
 

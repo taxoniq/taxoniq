@@ -5,7 +5,6 @@ import json
 import logging
 import io
 import struct
-import tempfile
 import concurrent.futures
 from collections import defaultdict
 
@@ -302,14 +301,17 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
             acc_info["packed_id"],
             (acc_info["tax_id"], ((BLASTDatabase[acc_info["db_name"]].value << 8) + acc_info["volume_id"]))
         )
+
+    def db_path(db_package):
+        return os.path.join(destdir, "..", "db_packages", db_package, db_package, "db.marisa")
     t = marisa_trie.RecordTrie("IH", load_accession_data(acc_xform))
-    t.save(os.path.join(destdir, "..", "db_packages", "taxoniq_accessions", "taxoniq_accessions", "db.marisa"))
+    t.save(db_path("taxoniq_accessions"))
     logger.info("Completed writing taxoniq_accessions db")
     t = marisa_trie.RecordTrie("I", load_accession_data(lambda d: (d["packed_id"], (d["offset"], ))))
-    t.save(os.path.join(destdir, "..", "db_packages", "taxoniq_accession_offsets", "taxoniq_accession_offsets", "db.marisa"))
+    t.save(db_path("taxoniq_accession_offsets"))
     logger.info("Completed writing taxoniq_accession_offsets db")
     t = marisa_trie.RecordTrie("I", load_accession_data(lambda d: (d["packed_id"], (d["length"], ))))
-    t.save(os.path.join(destdir, "..", "db_packages", "taxoniq_accession_lengths", "taxoniq_accession_lengths", "db.marisa"))
+    t.save(db_path("taxoniq_accession_lengths"))
     logger.info("Completed writing taxoniq_accession_lengths db")
     write_taxid_to_string_index(mapping=[(tid, ",".join(acc)) for tid, acc in taxid2refseq.items()],
                                 index_name="taxid2refseq", destdir=destdir)
@@ -410,7 +412,9 @@ def load_accession_info_from_blast_db(db_name):
         if db_path == db_name or db_path.startswith(db_name + "."):
             db_volumes.append(os.path.join(os.environ["BLASTDB"], db_path))
             # Create a placeholder sparse file for nsq (sequence data) so blastdbcmd won't complain about it missing
-            subprocess.run(["dd", "if=/dev/zero", f"of={db_volumes[-1]}.nsq", "bs=1", "count=0", "seek=8G", "status=none"])
+            subprocess.run(
+                ["dd", "if=/dev/zero", f"of={db_volumes[-1]}.nsq", "bs=1", "count=0", "seek=8G", "status=none"]
+            )
 
     for db_volume in db_volumes:
         logger.info("Processing BLAST db volume %s", db_volume)
@@ -421,17 +425,19 @@ def load_accession_info_from_blast_db(db_name):
         for line in subprocess.check_output(blastdbcmd).decode().splitlines():
             accession_id, ordinal_id, length, tax_id = line.strip().split()
             assert accession_id not in accessions_for_volume
-            accessions_for_volume[accession_id] = dict(ordinal_id=int(ordinal_id), length=int(length), tax_id=int(tax_id))
+            accessions_for_volume[accession_id] = dict(ordinal_id=int(ordinal_id),
+                                                       length=int(length),
+                                                       tax_id=int(tax_id))
 
         with open(f"{db_volume}.nin", "rb") as fh:
             # See ncbi-blast-2.9.0+-src/c++/src/objtools/blast/seqdb_reader/seqdbfile.cpp
             format_version, sequence_type, volume = struct.unpack(">III", fh.read(12))
             assert format_version == 5
-            title, lmdb_file, create_date = read_blastdb_str(fh), read_blastdb_str(fh), read_blastdb_str(fh)
+            title, lmdb_file, create_date = read_blastdb_str(fh), read_blastdb_str(fh), read_blastdb_str(fh)  # noqa
             num_oids = struct.unpack(">I", fh.read(4))[0]
-            volume_length = struct.unpack("<q", fh.read(8))[0]
-            max_seq_length = struct.unpack(">I", fh.read(4))[0]
-            header_array = struct.unpack(f">{num_oids + 1}I", fh.read(4 * (num_oids + 1)))
+            volume_length = struct.unpack("<q", fh.read(8))[0]  # noqa: F841
+            max_seq_length = struct.unpack(">I", fh.read(4))[0]  # noqa: F841
+            header_array = struct.unpack(f">{num_oids + 1}I", fh.read(4 * (num_oids + 1)))  # noqa: F841
             sequence_array = struct.unpack(f">{num_oids + 1}I", fh.read(4 * (num_oids + 1)))
             db_type = "Nucleotide" if sequence_type == 0 else "Protein"
             logger.info("%s database %s %s (%d records)", db_type, title, create_date, num_oids)
