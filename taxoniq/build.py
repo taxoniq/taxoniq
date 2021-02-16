@@ -1,10 +1,11 @@
 import os
 import subprocess
 import enum
-import gzip
+import json
 import logging
 import io
 import struct
+import tempfile
 import concurrent.futures
 from collections import defaultdict
 
@@ -228,21 +229,19 @@ def load_common_names(names):
             yield (tax_id, tax_names["common name"])
 
 
-def load_accession_data(blast_db_names, taxid2refseq):
+def preprocess_accession_data(blast_db_names, taxid2refseq):
     all_accessions, duplicate_accessions = set(), set()
     processed_accessions = 0
     for blast_db_name in blast_db_names:
         for accession_id, accession_info in load_accession_info_from_blast_db(blast_db_name):
-            packed_id = Accession._pack_id(Accession, accession_id)
+            accession_info["packed_id"] = Accession._pack_id(Accession, accession_id)
             if accession_id in all_accessions:
                 duplicate_accessions.add(accession_id)
                 continue
             if blast_db_name.startswith("ref_"):
                 taxid2refseq[accession_info["tax_id"]].append(accession_id)
-            yield (packed_id, (accession_info["tax_id"],
-                               (BLASTDatabase[accession_info["db_name"]].value << 8) + accession_info["volume_id"],
-                               accession_info["offset"],
-                               accession_info["length"]))
+            yield accession_info
+
             processed_accessions += 1
             all_accessions.add(accession_id)
         logger.info("Processed %s, loaded %d total accessions", blast_db_name, processed_accessions)
@@ -250,6 +249,7 @@ def load_accession_data(blast_db_names, taxid2refseq):
 
 
 def write_taxid_to_string_index(mapping, index_name, destdir):
+    logger.info("Writing string index %s to %s...", index_name, destdir)
     taxid2pos = {}
     string_db = io.BytesIO()
     for tax_id, string_value in mapping:
@@ -261,6 +261,7 @@ def write_taxid_to_string_index(mapping, index_name, destdir):
 
     t = marisa_trie.RecordTrie("I", [(str(tid), (pos, )) for tid, pos in taxid2pos.items()])
     t.save(os.path.join(destdir, f"{index_name}.marisa"))
+    logger.info("Completed writing string index %s to %s", index_name, destdir)
 
 
 def fetch_file(url):
@@ -271,8 +272,11 @@ def fetch_file(url):
     return local_filename
 
 
-def build_trees(destdir=os.path.dirname(__file__)):
+def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), destdir=os.path.dirname(__file__)):
     logging.basicConfig(level=logging.INFO)
+
+    if not blast_databases:
+        blast_databases = [db.name for db in BLASTDatabase]
 
     if not os.path.exists("nodes.dmp"):
         cmd = "curl https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz | tar -xvz"
@@ -282,19 +286,31 @@ def build_trees(destdir=os.path.dirname(__file__)):
     marisa_trie.RecordTrie("IBBB", load_taxa()).save(os.path.join(destdir, 'taxa.marisa'))
 
     taxid2refseq = defaultdict(list)
-    accession_data = list(load_accession_data([db.name for db in BLASTDatabase], taxid2refseq=taxid2refseq))
-    t = marisa_trie.RecordTrie("I", [(a, (d[0], )) for a, d in accession_data])
-    t.save(os.path.join(destdir, "..", "db_packages", "taxoniq_accessions", "taxoniq_accessions", "taxid_db.marisa"))
-    logger.info("Done writing taxoniq_accessions taxid db")
-    t = marisa_trie.RecordTrie("H", [(a, (d[1], )) for a, d in accession_data])
-    t.save(os.path.join(destdir, "..", "db_packages", "taxoniq_accessions", "taxoniq_accessions", "blast_db.marisa"))
-    logger.info("Done writing taxoniq_accessions blast db")
-    t = marisa_trie.RecordTrie("I", [(a, (d[2], )) for a, d in accession_data])
+
+    accession_cache = os.path.join(os.environ["BLASTDB"], "accession_cache")
+    with open(accession_cache, "w") as fh:
+        for acc_info in preprocess_accession_data(blast_databases, taxid2refseq=taxid2refseq):
+            print(json.dumps(acc_info), file=fh)
+
+    def load_accession_data(xform):
+        with open(accession_cache) as fh:
+            for line in fh:
+                yield xform(json.loads(line))
+
+    def acc_xform(acc_info):
+        return (
+            acc_info["packed_id"],
+            (acc_info["tax_id"], ((BLASTDatabase[acc_info["db_name"]].value << 8) + acc_info["volume_id"]))
+        )
+    t = marisa_trie.RecordTrie("IH", load_accession_data(acc_xform))
+    t.save(os.path.join(destdir, "..", "db_packages", "taxoniq_accessions", "taxoniq_accessions", "db.marisa"))
+    logger.info("Completed writing taxoniq_accessions db")
+    t = marisa_trie.RecordTrie("I", load_accession_data(lambda d: (d["packed_id"], (d["offset"], ))))
     t.save(os.path.join(destdir, "..", "db_packages", "taxoniq_accession_offsets", "taxoniq_accession_offsets", "db.marisa"))
-    logger.info("Done writing taxoniq_accession_offsets db")
-    t = marisa_trie.RecordTrie("I", [(a, (d[3], )) for a, d in accession_data])
+    logger.info("Completed writing taxoniq_accession_offsets db")
+    t = marisa_trie.RecordTrie("I", load_accession_data(lambda d: (d["packed_id"], (d["length"], ))))
     t.save(os.path.join(destdir, "..", "db_packages", "taxoniq_accession_lengths", "taxoniq_accession_lengths", "db.marisa"))
-    logger.info("Done writing taxoniq_accession_lengths db")
+    logger.info("Completed writing taxoniq_accession_lengths db")
     write_taxid_to_string_index(mapping=[(tid, ",".join(acc)) for tid, acc in taxid2refseq.items()],
                                 index_name="taxid2refseq", destdir=destdir)
 

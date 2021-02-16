@@ -33,7 +33,6 @@ section below.
 # Synopsis
 
 ```
-
 t = taxoniq.Taxon(9606)
 assert t.scientific_name == "Homo sapiens"
 assert t.common_name == "human"

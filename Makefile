@@ -1,16 +1,24 @@
 BLAST_DB_S3_BUCKET=ncbi-blast-databases
 BLAST_DB_GS_BUCKET=blast-db
-BLAST_DB_DIR=/mnt/blast-db
+
+ifndef BLASTDB
+$(error Please set BLASTDB)
+endif
 
 version: taxoniq/version.py
 taxoniq/version.py: setup.py
 	echo "__version__ = '$$(python3 setup.py --version)'" > $@
 
 build:
-	mkdir -p $(BLAST_DB_DIR)
-	aws s3 cp s3://$(BLAST_DB_S3_BUCKET)/latest-dir .
+	pip3 install --upgrade awscli marisa-trie zstandard urllib3 db_packages/*
+	mkdir -p $(BLASTDB)
+	aws s3 cp --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/latest-dir .
 	echo "blast_db_timestamp = '$$(cat latest-dir)'" > taxoniq/const.py
-	aws s3 sync s3://$(BLAST_DB_S3_BUCKET)/$$(cat latest-dir)/ $(BLAST_DB_DIR)/ --exclude "*.nsq" --exclude "*.p*" --exclude "env_*" --exclude "patnt*" --exclude "refseq_rna*"
+ifdef BLAST_DATABASES
+	aws s3 sync --quiet --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/$$(cat latest-dir)/ $(BLASTDB)/ --exclude "*" --include "Betacoronavirus*" --include "ref_viruses_rep_genomes*"
+else
+	aws s3 sync --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/$$(cat latest-dir)/ $(BLASTDB)/ --exclude "*.nsq" --exclude "*.p*" --exclude "env_*" --exclude "patnt*" --exclude "refseq_rna*"
+endif
 	python3 -c 'import logging; logging.basicConfig(level=logging.DEBUG); import taxoniq.build as tb; tb.build_trees()'
 
 lint:
@@ -23,9 +31,8 @@ docs:
 	sphinx-build docs docs/html
 
 install: clean version build
-	pip3 install wheel
-	python3 setup.py bdist_wheel
-	pip3 install --upgrade dist/*.whl
+	pip3 install .
+	pip3 install --upgrade db_packages/*
 
 clean:
 	-rm -rf build dist

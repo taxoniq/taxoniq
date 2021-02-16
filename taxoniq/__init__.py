@@ -23,7 +23,7 @@ Rank = Enum(
 
 
 BLASTDatabase = Enum("BLASTDatabase",
-                     ("ref_viruses_rep_genomes ref_prok_rep_genomes ref_euk_rep_genomes Betacoronavirus"))# nt"))
+                     ("ref_viruses_rep_genomes ref_prok_rep_genomes ref_euk_rep_genomes Betacoronavirus nt"))
 
 
 class TaxoniqException(Exception):
@@ -49,8 +49,7 @@ class Accession(DatabaseService):
     FIXME: add docstring
     """
     _db_files = {
-        "accession_taxids": (marisa_trie.RecordTrie("I"), taxoniq_accessions.taxid_db),
-        "accession_blastdb": (marisa_trie.RecordTrie("H"), taxoniq_accessions.blast_db),
+        "accessions": (marisa_trie.RecordTrie("IH"), taxoniq_accessions.db),
         "accession_offsets": (marisa_trie.RecordTrie("I"), taxoniq_accession_offsets.db),
         "accession_lengths": (marisa_trie.RecordTrie("I"), taxoniq_accession_lengths.db)
     }
@@ -60,12 +59,7 @@ class Accession(DatabaseService):
     def __init__(self, accession_id):
         self.accession_id = accession_id
         self._packed_id = self._pack_id(accession_id)
-        #tax_id_and_db_info = self._get_db("accessions")[self._packed_id][0][0]
-        #self.tax_id = tax_id_and_db_info >> 12
-        #self.blast_db = BLASTDatabase((tax_id_and_db_info >> 8) & 0xf)
-        #self._blast_db_volume = tax_id_and_db_info & 0xff
-        self.tax_id = self._get_db("accession_taxids")[self._packed_id][0][0]
-        db_info = self._get_db("accession_blastdb")[self._packed_id][0][0]
+        self.tax_id, db_info = self._get_db("accessions")[self._packed_id][0]
         self.blast_db = BLASTDatabase(db_info >> 8)
         self._blast_db_volume = db_info & 0xff
         self._db_offset, self._length = None, None
@@ -188,6 +182,10 @@ class Taxon(DatabaseService):
         return Taxon(self._parent)
 
     @property
+    def children(self) -> 'List[Taxon]':
+        raise NotImplementedError()
+
+    @property
     def description(self) -> str:
         '''
         Opening paragraph on Wikipedia
@@ -202,12 +200,14 @@ class Taxon(DatabaseService):
     def refseq_representative_genome_accessions(self) -> List[Accession]:
         return self._get_str_attr("taxid2refseq").split(",")
 
-    def lca(self, others):
+    @classmethod
+    def lca(cls, taxa):
         raise NotImplementedError()
 
-    def distance(self, other):
+    @classmethod
+    def distance(cls, taxa):
         '''
-        Phylogenetic distance between this taxon and the other as computed by WoL
+        Phylogenetic distance between taxa as computed by WoL
         '''
         raise NotImplementedError()
 

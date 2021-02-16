@@ -22,7 +22,6 @@ class TwoBitDecoder:
 
     def decompress(self, data: bytes) -> bytes:
         seq = io.BytesIO()
-        # FIXME: replace this loop with byte regexp
         for byte in data:
             seq.write(twobit2ascii_byte_lut[byte])
         seq = seq.getvalue()
