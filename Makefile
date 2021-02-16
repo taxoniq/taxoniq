@@ -15,11 +15,12 @@ build:
 	aws s3 cp --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/latest-dir .
 	echo "blast_db_timestamp = '$$(cat latest-dir)'" > taxoniq/const.py
 ifdef BLAST_DATABASES
-	aws s3 sync --quiet --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/$$(cat latest-dir)/ $(BLASTDB)/ --exclude "*" --include "Betacoronavirus*" --include "ref_viruses_rep_genomes*"
+	aws s3 sync --quiet --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/$$(cat latest-dir)/ $(BLASTDB)/ --exclude "*" --include "Betacoronavirus*" --include "ref_viruses_rep_genomes*" --include "ref_prok_rep_genomes*"
 else
 	aws s3 sync --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/$$(cat latest-dir)/ $(BLASTDB)/ --exclude "*.nsq" --exclude "*.p*" --exclude "env_*" --exclude "patnt*" --exclude "refseq_rna*"
 endif
 	python3 -c 'import logging; logging.basicConfig(level=logging.DEBUG); import taxoniq.build as tb; tb.build_trees()'
+	if [[ $$CI ]]; then rm -rf $(BLASTDB); fi
 
 lint:
 	flake8 $$(python3 setup.py --name)

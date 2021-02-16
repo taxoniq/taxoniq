@@ -52,7 +52,7 @@ class Accession(DatabaseService):
         "accession_offsets": (marisa_trie.RecordTrie("I"), taxoniq_accession_offsets.db),
         "accession_lengths": (marisa_trie.RecordTrie("I"), taxoniq_accession_lengths.db)
     }
-    http = urllib3.PoolManager()
+    http = urllib3.PoolManager(maxsize=min(32, os.cpu_count() + 4))
     s3_host = "ncbi-blast-databases.s3.amazonaws.com"
 
     def __init__(self, accession_id):

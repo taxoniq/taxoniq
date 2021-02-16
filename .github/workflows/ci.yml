@@ -4,7 +4,7 @@ on: [push]
 
 env:
   BLASTDB: blast-db
-  BLAST_DATABASES: "ref_viruses_rep_genomes Betacoronavirus"
+  BLAST_DATABASES: "ref_viruses_rep_genomes ref_prok_rep_genomes Betacoronavirus"
 
 jobs:
   build:
