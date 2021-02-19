@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="taxoniq-accessions",
-    version="2021.2.9-r1",
+    version="2021.2.9.post2",
     url="https://github.com/chanzuckerberg/taxoniq",
     license="MIT License",
     author="Andrey Kislyuk",
