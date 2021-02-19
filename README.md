@@ -89,7 +89,7 @@ as described in the **Cookbook** section below.
 4641652
 
 # The get_from_s3() method is the only command that will trigger a network call.
->>> seq = t2.refseq_representative_genome_accessions[0].get_from_s3().read()
+>>> seq = t3.refseq_representative_genome_accessions[0].get_from_s3().read()
 >>> len(seq)
 4641652
 >>> seq[:64]
