@@ -23,8 +23,8 @@ the [NCBI RefSeq](https://www.ncbi.nlm.nih.gov/refseq/) nucleotide and protein a
 the [WoL](https://biocore.github.io/wol/) kingdom-wide phylogenetic distance database, and relevant information from
 other databases. Accessions which appear in the NCBI RefSeq BLAST databases are indexed so that
 given a taxon ID, accession ID, or taxon name, you can quickly retrieve the taxon's rank, lineage, description,
-citations, representative RefSeq IDs, LCA information, evolutionary distance, and more, as described in the Cookbook
-section below.
+citations, representative RefSeq IDs, LCA information, evolutionary distance, sequence (with a network call), and more,
+as described in the **Cookbook** section below.
 
 # Installation
 
@@ -44,6 +44,11 @@ assert t.ranked_lineage == [taxoniq.Taxon(scientific_name='Homo sapiens'),
                             taxoniq.Taxon(scientific_name='Chordata'),
                             taxoniq.Taxon(scientific_name='Metazoa'),
                             taxoniq.Taxon(scientific_name='Eukaryota')]
+t.refseq_representative_genome_accessions
+# ['NT_113888.1', ..., 'NC_000024.10', 'NC_000023.11', 'NC_000022.11', 'NC_000021.9', 'NC_000020.11', 'NC_000019.10',
+#  'NC_000018.10', 'NC_000017.11', 'NC_000016.10', 'NC_000015.10', 'NC_000014.9', 'NC_000013.11', 'NC_000012.12',
+#  'NC_000011.10', 'NC_000010.11', 'NC_000009.12', 'NC_000008.11', 'NC_000007.14', 'NC_000006.12', 'NC_000005.10',
+#  'NC_000004.12', 'NC_000003.12', 'NC_000002.12', 'NC_000001.11', ..., 'NW_021159987.1']
 
 t2 = taxoniq.Taxon(accession_id="NC_000913.3")
 assert t2 == taxoniq.Taxon(scientific_name="Escherichia coli str. K-12 substr. MG1655")
