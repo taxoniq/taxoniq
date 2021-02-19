@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
 import os
+import json
 import unittest
 import logging
 from concurrent.futures import ThreadPoolExecutor
 
 import taxoniq
+import taxoniq.build
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -67,6 +69,15 @@ class TestTaxoniq(unittest.TestCase):
         taxon = taxoniq.Taxon(scientific_name="Apis mellifera")
         for accession, seq in ThreadPoolExecutor().map(fetch_seq, taxon.refseq_representative_genome_accessions):
             assert accession.length == len(seq)
+
+    def test_wikipedia_client(self):
+        client = taxoniq.build.WikipediaDescriptionClient()
+        result_file = client.build_index(destdir="/tmp", max_records=8)
+        with open(result_file) as fh:
+            for line in fh:
+                doc = json.loads(line)
+                for key in "taxid", "wikidata_id", "en_wiki_title", "extract":
+                    self.assertIn(key, doc)
 
 
 if __name__ == "__main__":

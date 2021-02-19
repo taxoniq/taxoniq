@@ -1,11 +1,12 @@
 import os
+import sys
 import subprocess
 import enum
 import json
 import logging
 import io
 import struct
-import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 from collections import defaultdict
 
 import marisa_trie
@@ -195,6 +196,98 @@ class TaxIdLineageReader(TaxDumpReader):
     ]
 
 
+class WikipediaDescriptionClient:
+    def get_taxonbar_page_ids(self):
+        params = dict(action="query", list="embeddedin", eititle="Template:Taxonbar", format="json", eilimit=500)
+        while True:
+            res = http.request("GET", url="https://en.wikipedia.org/w/api.php", fields=params)
+            assert res.status == 200
+            page = json.loads(res.data)
+            for pageset_start in range(0, len(page["query"]["embeddedin"]), 50):
+                yield [str(record["pageid"]) for record in page["query"]["embeddedin"][pageset_start:pageset_start+50]]
+            if not page.get("continue"):
+                break
+            params.update(page["continue"])
+
+    def get_wiki_pages(self, domain="www.wikidata.org", **kwargs):
+        params = dict(action="query", prop="revisions", rvprop="content", format="json", **kwargs)
+        res = http.request("GET", url=f"https://{domain}/w/api.php", fields=params)
+        assert res.status == 200, res
+        res_doc = json.loads(res.data)
+        for page in res_doc["query"]["pages"].values():
+            assert page["ns"] == 0
+            assert len(page["revisions"]) == 1
+            yield page["pageid"], page["title"], page["revisions"][0]["*"]
+
+    def get_wikidata_linkshere(self, title, max_pages=sys.maxsize):
+        params = dict(action="query", prop="linkshere", lhnamespace="0", lhprop="pageid|title", lhlimit=500,
+                      format="json", titles=title)
+        n_pages = 0
+        while True:
+            res = http.request("GET", url="https://www.wikidata.org/w/api.php", fields=params)
+            assert res.status == 200, res
+            res_doc = json.loads(res.data)
+            for page_links in res_doc["query"]["pages"].values():
+                for pageset_start in range(0, len(page_links["linkshere"]), 50):
+                    yield [str(record["pageid"]) for record in page_links["linkshere"][pageset_start:pageset_start+50]]
+            n_pages += 1
+            if n_pages >= max_pages or not res_doc.get("continue"):
+                break
+            params.update(res_doc["continue"])
+
+    def get_extracts(self, titles, domain="en.wikipedia.org"):
+        assert len(titles) <= 20
+        params = dict(action="query", prop="extracts", exintro=True, exchars=1000, format="json", titles="|".join(titles))
+        res = http.request("GET", url=f"https://{domain}/w/api.php", fields=params)
+        assert res.status == 200, res
+        res_doc = json.loads(res.data)
+        for page in res_doc["query"]["pages"].values():
+            if page["ns"] == 0 and "extract" in page and "title" in page:
+                yield page
+            else:
+                logger.error("Error retrieving extract: %s", page)
+
+    def process_pageid_set(self, pageid_set):
+        tax_data_by_title = {}
+        for pageid, title, page in self.get_wiki_pages(pageids="|".join(pageid_set)):
+            page = json.loads(page)
+            if "redirect" in page or "enwiki" not in page.get("sitelinks", {}):
+                continue
+            en_wiki_title = page["sitelinks"]["enwiki"]["title"]
+            claims = page["claims"]
+            # P31, instance of; P685, NCBI taxid
+            if "P31" not in claims or "P685" not in claims:
+                continue
+            if claims["P31"][0]["mainsnak"]["datavalue"]["value"]["id"] != "Q16521":
+                continue
+            if claims["P685"][0]["mainsnak"]["snaktype"] == "novalue":
+                continue
+            taxid = claims["P685"][0]["mainsnak"]["datavalue"]["value"]
+            tax_data_by_title[en_wiki_title] = dict(taxid=taxid, wikidata_id=title, en_wiki_title=en_wiki_title)
+
+        titles = list(tax_data_by_title.keys())
+        for titleset_start in range(0, len(titles), 20):
+            for extract in self.get_extracts(titles[titleset_start:titleset_start+20]):
+                tax_data_by_title[extract["title"]]["extract"] = extract["extract"]
+        logger.debug("Processed %d pages", len(tax_data_by_title))
+        return tax_data_by_title
+
+    def build_index(self, destdir, max_records=sys.maxsize, **threadpool_kwargs):
+        index_filename = os.path.join(destdir, "wikipedia_extracts.json")
+        with open(index_filename, "w") as fh, ThreadPoolExecutor(**threadpool_kwargs) as executor:
+            n_records = 0
+            # Q16521, taxon
+            for tax_data_set in executor.map(self.process_pageid_set,
+                                             self.get_wikidata_linkshere("Q16521", max_pages=max_records)):
+                for tax_datum in tax_data_set.values():
+                    fh.write(json.dumps(tax_datum) + "\n")
+                    n_records += 1
+                logger.debug("Wrote %d records", n_records)
+                if n_records >= max_records:
+                    break
+        return index_filename
+
+
 def read_blastdb_str(fh):
     str_len = struct.unpack(">i", fh.read(4))[0]
     str_contents = fh.read(str_len).decode()
@@ -378,7 +471,7 @@ def download_refseq_accessions(destdir=os.path.dirname(__file__)):
             assembly_summaries.append(assembly_summary)
     taxid2gbaccn = {}
     duplicate_assy_taxids = defaultdict(set)
-    for assembly_molecules in concurrent.futures.ThreadPoolExecutor().map(process_assembly_report, assembly_summaries):
+    for assembly_molecules in ThreadPoolExecutor().map(process_assembly_report, assembly_summaries):
         accessions_for_taxon = []
         for assembly_molecule in assembly_molecules:
             if assembly_molecule["taxid"] in taxid2gbaccn:
