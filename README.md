@@ -98,5 +98,15 @@ In progress
 
 # Links
 
+# License
+Taxoniq software is licensed under the terms of the [MIT License](LICENSE).
+
+Distributions of this package contain data from the
+[National Center for Biotechnology Information](https://www.ncbi.nlm.nih.gov/) released into the public domain under the
+[NCBI Public Domain Notice](LICENSE.NCBI).
+
+Distributions of this package contain text excerpts from Wikipedia licensed under the terms of the
+[CC-BY-SA License](LICENSE.WIKIPEDIA).
+
 # Bugs
 Please report bugs, issues, feature requests, etc. on [GitHub](https://github.com/kislyuk/argcomplete/issues).
