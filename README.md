@@ -56,7 +56,7 @@ as described in the **Cookbook** section below.
  taxoniq.Accession('NC_000010.11')]
 
 >>> t.url
-'https://www.ncbi.nlm.nih.gov/taxonomy/9606'
+'https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=9606'
 
 # Wikidata provides structured links to many databases about taxa represented on Wikipedia
 >>> t.wikidata_url

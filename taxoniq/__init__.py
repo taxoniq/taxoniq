@@ -238,7 +238,7 @@ class Taxon(DatabaseService):
         '''
         URL of the NCBI Taxonomy web page for this taxon
         '''
-        return f"https://www.ncbi.nlm.nih.gov/taxonomy/{self.tax_id}"
+        return f"https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id={self.tax_id}"
 
     @property
     def wikidata_id(self):
