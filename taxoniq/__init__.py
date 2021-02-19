@@ -103,6 +103,9 @@ class Accession(DatabaseService):
     def url(self):
         raise NotImplementedError()
 
+    def __repr__(self):
+        return "{}.{}({})".format(self.__module__, self.__class__.__name__, self.accession_id)
+
 
 class Taxon(DatabaseService):
     """
