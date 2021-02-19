@@ -55,7 +55,7 @@ class Accession(DatabaseService):
     http = urllib3.PoolManager(maxsize=min(32, os.cpu_count() + 4))
     s3_host = "ncbi-blast-databases.s3.amazonaws.com"
 
-    def __init__(self, accession_id):
+    def __init__(self, accession_id: str):
         self.accession_id = accession_id
         self._packed_id = self._pack_id(accession_id)
         self._tax_id = None

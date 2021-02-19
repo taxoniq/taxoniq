@@ -62,8 +62,7 @@ class TestTaxoniq(unittest.TestCase):
 
     @unittest.skipIf("CI" in os.environ, "Skippinng test that requires eukaryotic database")
     def test_taxon2refseq(self):
-        def fetch_seq(accession_id):
-            accession = taxoniq.Accession(accession_id)
+        def fetch_seq(accession):
             seq = accession.get_from_s3().read()
             return (accession, seq)
         taxon = taxoniq.Taxon(scientific_name="Apis mellifera")
@@ -72,7 +71,7 @@ class TestTaxoniq(unittest.TestCase):
 
     def test_wikipedia_client(self):
         client = taxoniq.build.WikipediaDescriptionClient()
-        result_file = client.build_index(destdir="/tmp", max_records=8)
+        result_file = client.build_index(destdir="/tmp", max_records=2)
         with open(result_file) as fh:
             for line in fh:
                 doc = json.loads(line)
