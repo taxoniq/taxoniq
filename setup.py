@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="taxoniq",
-    version="0.0.5",
+    version="0.0.6",
     url="https://github.com/chanzuckerberg/taxoniq",
     project_urls={
         "Documentation": "https://chanzuckerberg.github.io/taxoniq",
