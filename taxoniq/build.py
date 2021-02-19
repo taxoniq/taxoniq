@@ -235,9 +235,10 @@ class WikipediaDescriptionClient:
                 break
             params.update(res_doc["continue"])
 
-    def get_extracts(self, titles, domain="en.wikipedia.org"):
+    def get_extracts(self, titles, domain="en.wikipedia.org", extract_chars=1000):
         assert len(titles) <= 20
-        params = dict(action="query", prop="extracts", exintro=True, exchars=1000, format="json", titles="|".join(titles))
+        params = dict(action="query", prop="extracts", exintro=True, exchars=extract_chars, format="json",
+                      titles="|".join(titles))
         res = http.request("GET", url=f"https://{domain}/w/api.php", fields=params)
         assert res.status == 200, res
         res_doc = json.loads(res.data)
@@ -548,5 +549,4 @@ def load_accession_info_from_blast_db(db_name):
 # TODO: load WoL tree distance information
 # TODO: rank accessions by informativeness
 # TODO: load virus host and refseq data (Viruses_RefSeq_and_neighbors_genome_data.tab)
-# TODO: use unsigned S3 requests
 # TODO: use blastdb-manifest.json

@@ -26,11 +26,11 @@ given a taxon ID, accession ID, or taxon name, you can quickly retrieve the taxo
 citations, representative RefSeq IDs, LCA information, evolutionary distance, sequence (with a network call), and more,
 as described in the **Cookbook** section below.
 
-# Installation
+## Installation
 
     pip3 install taxoniq
 
-# Synopsis
+## Synopsis
 
 ```
 t = taxoniq.Taxon(9606)
@@ -53,9 +53,12 @@ t.refseq_representative_genome_accessions
 t2 = taxoniq.Taxon(accession_id="NC_000913.3")
 assert t2 == taxoniq.Taxon(scientific_name="Escherichia coli str. K-12 substr. MG1655")
 assert t2.parent.parent.common_name == "E. coli"
+
+t2.description
+
 ```
 
-# Retrieving sequences
+## Retrieving sequences
 
 Mirrors of the NCBI BLAST databases are maintained on [AWS S3](https://registry.opendata.aws/ncbi-blast-databases/)
 (`s3://ncbi-blast-databases`) and Google Storage (`gs://blast-db`). This is a key resource, since S3 and GS have
@@ -90,15 +93,15 @@ for accession, seq in ThreadPoolExecutor().map(fetch_seq, taxon.refseq_represent
     print(accession, len(seq))
 ```
 
-# Using the nr/nt databases
+## Using the nr/nt databases
 In progress
 
-# Cookbook
+## Cookbook
 In progress
 
-# Links
+## Links
 
-# License
+## License
 Taxoniq software is licensed under the terms of the [MIT License](LICENSE).
 
 Distributions of this package contain data from the
@@ -108,5 +111,5 @@ Distributions of this package contain data from the
 Distributions of this package contain text excerpts from Wikipedia licensed under the terms of the
 [CC-BY-SA License](LICENSE.WIKIPEDIA).
 
-# Bugs
+## Bugs
 Please report bugs, issues, feature requests, etc. on [GitHub](https://github.com/kislyuk/argcomplete/issues).
