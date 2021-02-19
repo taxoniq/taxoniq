@@ -320,6 +320,8 @@ def load_common_names(names):
             yield (tax_id, tax_names["genbank common name"])
         elif "common name" in tax_names:
             yield (tax_id, tax_names["common name"])
+        else:
+            pass  # FIXME: fall back to en_wiki_title
 
 
 def preprocess_accession_data(blast_db_names, taxid2refseq):
@@ -347,7 +349,7 @@ def write_taxid_to_string_index(mapping, index_name, destdir):
     string_db = io.BytesIO()
     for tax_id, string_value in mapping:
         taxid2pos[tax_id] = string_db.tell()
-        string_db.write(string_value.encode())
+        string_db.write(string_value.replace("\n", " ").encode())
         string_db.write(b"\n")
     with open(os.path.join(destdir, f"{index_name}.zstd"), "wb") as fh:
         fh.write(zstandard.compress(string_db.getvalue()))
@@ -365,6 +367,15 @@ def fetch_file(url):
     return local_filename
 
 
+def load_wikidata(field="wikidata_id"):
+    # TODO: gzip, cache dir
+    with open("/mnt/wikipedia_extracts.json") as fh:
+        for line in fh:
+            record = json.loads(line)
+            if field in record:
+                yield (record["taxid"], (int(record[field].lstrip("Q")), ) if field == "wikidata_id" else record[field])
+
+
 def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), destdir=os.path.dirname(__file__)):
     logging.basicConfig(level=logging.INFO)
 
@@ -375,6 +386,10 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
         cmd = "curl https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz | tar -xvz"
         subprocess.run(cmd, shell=True)
 
+    marisa_trie.RecordTrie("I", load_wikidata()).save(os.path.join(destdir, 'wikidata.marisa'))
+    write_taxid_to_string_index(mapping=load_wikidata(field="extract"), index_name="descriptions", destdir=destdir)
+    write_taxid_to_string_index(mapping=load_wikidata(field="en_wiki_title"), index_name="en_wiki_titles",
+                                destdir=destdir)
     # TODO: pack all bit fields into one byte
     marisa_trie.RecordTrie("IBBB", load_taxa()).save(os.path.join(destdir, 'taxa.marisa'))
 
@@ -408,7 +423,7 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
     t.save(db_path("taxoniq_accession_lengths"))
     logger.info("Completed writing taxoniq_accession_lengths db")
     write_taxid_to_string_index(mapping=[(tid, ",".join(acc)) for tid, acc in taxid2refseq.items()],
-                                index_name="taxid2refseq", destdir=destdir)
+                                index_name="taxid2refseqs", destdir=destdir)
 
     names, sn2taxid = defaultdict(dict), {}
     for row in TaxonomyNamesReader():
@@ -490,7 +505,7 @@ def download_refseq_accessions(destdir=os.path.dirname(__file__)):
                 accessions_for_taxon.append(genbank_accn)
             else:
                 mismatch[genbank_accn] += 1
-        taxid2gbaccn[assembly_molecule["taxid"]] = ",".join(accessions_for_taxon)
+        taxid2gbaccn[assembly_molecule["taxid"]] = ",".join(sorted(accessions_for_taxon))
     print("taxa with refseq:", len(taxa_with_refseq), sum(taxa_with_refseq.values()))
     print("gb accessions found in nt:", len(gb), sum(gb.values()))
     print("gb accessions not found in nt:", len(mismatch), sum(mismatch.values()))

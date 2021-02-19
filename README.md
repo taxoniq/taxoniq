@@ -33,29 +33,67 @@ as described in the **Cookbook** section below.
 ## Synopsis
 
 ```
-t = taxoniq.Taxon(9606)
-assert t.scientific_name == "Homo sapiens"
-assert t.common_name == "human"
-assert t.ranked_lineage == [taxoniq.Taxon(scientific_name='Homo sapiens'),
-                            taxoniq.Taxon(scientific_name='Homo'),
-                            taxoniq.Taxon(scientific_name='Hominidae'),
-                            taxoniq.Taxon(scientific_name='Primates'),
-                            taxoniq.Taxon(scientific_name='Mammalia'),
-                            taxoniq.Taxon(scientific_name='Chordata'),
-                            taxoniq.Taxon(scientific_name='Metazoa'),
-                            taxoniq.Taxon(scientific_name='Eukaryota')]
-t.refseq_representative_genome_accessions
-# ['NT_113888.1', ..., 'NC_000024.10', 'NC_000023.11', 'NC_000022.11', 'NC_000021.9', 'NC_000020.11', 'NC_000019.10',
-#  'NC_000018.10', 'NC_000017.11', 'NC_000016.10', 'NC_000015.10', 'NC_000014.9', 'NC_000013.11', 'NC_000012.12',
-#  'NC_000011.10', 'NC_000010.11', 'NC_000009.12', 'NC_000008.11', 'NC_000007.14', 'NC_000006.12', 'NC_000005.10',
-#  'NC_000004.12', 'NC_000003.12', 'NC_000002.12', 'NC_000001.11', ..., 'NW_021159987.1']
+>>> import taxoniq
+>>> t = taxoniq.Taxon(9606)
+>>> t.scientific_name
+'Homo sapiens'
+>>> t.common_name
+'human'
 
-t2 = taxoniq.Taxon(accession_id="NC_000913.3")
-assert t2 == taxoniq.Taxon(scientific_name="Escherichia coli str. K-12 substr. MG1655")
-assert t2.parent.parent.common_name == "E. coli"
+>>> t.ranked_lineage
+[taxoniq.Taxon(9606), taxoniq.Taxon(9605), taxoniq.Taxon(9604), taxoniq.Taxon(9443),
+ taxoniq.Taxon(40674), taxoniq.Taxon(7711), taxoniq.Taxon(33208), taxoniq.Taxon(2759)]
+>>> len(t.lineage)
+32
+>>> [(t.rank.name, t.scientific_name) for t in t.ranked_lineage]
+[('species', 'Homo sapiens'), ('genus', 'Homo'), ('family', 'Hominidae'), ('order', 'Primates'),
+ ('class', 'Mammalia'), ('phylum', 'Chordata'), ('kingdom', 'Metazoa'), ('superkingdom', 'Eukaryota')]
 
-t2.description
+>>> t.refseq_representative_genome_accessions[:10]
+[taxoniq.Accession('NC_000001.11'), taxoniq.Accession('NC_000002.12'), taxoniq.Accession('NC_000003.12'),
+ taxoniq.Accession('NC_000004.12'), taxoniq.Accession('NC_000005.10'), taxoniq.Accession('NC_000006.12'),
+ taxoniq.Accession('NC_000007.14'), taxoniq.Accession('NC_000008.11'), taxoniq.Accession('NC_000009.12'),
+ taxoniq.Accession('NC_000010.11')]
 
+>>> t.url
+'https://www.ncbi.nlm.nih.gov/taxonomy/9606'
+
+# Wikidata provides structured links to many databases about taxa represented on Wikipedia
+>>> t.wikidata_url
+'https://www.wikidata.org/wiki/Q15978631'
+```
+
+```
+>>> t2 = taxoniq.Taxon(scientific_name="Bacillus anthracis")
+>>> t2.description
+'<p class="mw-empty-elt"> </p> <p class="mw-empty-elt"> </p> <p><i><b>Bacillus anthracis</b></i>
+ is the agent of anthrax—a common disease of livestock and, occasionally, of humans—and the only
+ obligate pathogen within the genus <i>Bacillus</i>. This disease can be classified as a zoonosis,
+ causing infected animals to transmit the disease to humans. <i>B. anthracis</i> is a Gram-positive,
+ endospore-forming, rod-shaped bacterium, with a width of 1.0–1.2 µm and a length of 3–5&#160;µm.
+ It can be grown in an ordinary nutrient medium under aerobic or anaerobic conditions.</p>
+ <p>It is one of few bacteria known to synthesize a protein capsule (poly-D-gamma-glutamic acid).
+ Like <i>Bordetella pertussis</i>, it forms a calmodulin-dependent adenylate cyclase exotoxin known
+ as anthrax edema factor, along with anthrax lethal factor. It bears close genotypic and phenotypic
+ resemblance to <i>Bacillus cereus</i> and <i>Bacillus thuringiensis</i>. All three species share
+ cellular dimensions and morphology</p>...'
+```
+
+```
+>>> t3 = taxoniq.Taxon(accession_id="NC_000913.3")
+>>> t3.scientific_name
+'Escherichia coli str. K-12 substr. MG1655"'
+>>> t3.parent.parent.common_name
+'E. coli'
+>>> t3.refseq_representative_genome_accessions[0].length
+4641652
+
+# The get_from_s3() method is the only command that will trigger a network call.
+>>> seq = t2.refseq_representative_genome_accessions[0].get_from_s3().read()
+>>> len(seq)
+4641652
+>>> seq[:64]
+b'AGCTTTTCATTCTGACTGCAACGGGCAATATGTCTCTGTGTGGATTAAAAAAAGAGTGTCTGAT'
 ```
 
 ## Retrieving sequences

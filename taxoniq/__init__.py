@@ -2,9 +2,9 @@ import os
 from typing import List
 from enum import Enum
 
-import marisa_trie
-import zstandard
 import urllib3
+import zstandard
+from marisa_trie import RecordTrie
 
 import taxoniq_accessions
 import taxoniq_accession_offsets
@@ -48,9 +48,9 @@ class Accession(DatabaseService):
     FIXME: add docstring
     """
     _db_files = {
-        "accessions": (marisa_trie.RecordTrie("IH"), taxoniq_accessions.db),
-        "accession_offsets": (marisa_trie.RecordTrie("I"), taxoniq_accession_offsets.db),
-        "accession_lengths": (marisa_trie.RecordTrie("I"), taxoniq_accession_lengths.db)
+        "accessions": (RecordTrie("IH"), taxoniq_accessions.db),
+        "accession_offsets": (RecordTrie("I"), taxoniq_accession_offsets.db),
+        "accession_lengths": (RecordTrie("I"), taxoniq_accession_lengths.db)
     }
     http = urllib3.PoolManager(maxsize=min(32, os.cpu_count() + 4))
     s3_host = "ncbi-blast-databases.s3.amazonaws.com"
@@ -58,13 +58,30 @@ class Accession(DatabaseService):
     def __init__(self, accession_id):
         self.accession_id = accession_id
         self._packed_id = self._pack_id(accession_id)
-        self.tax_id, db_info = self._get_db("accessions")[self._packed_id][0]
-        self.blast_db = BLASTDatabase(db_info >> 8)
+        self._tax_id = None
+        self._blast_db, self._blast_db_volume, self._db_offset, self._length = None, None, None, None
+
+    def _load_accession_data(self):
+        self._tax_id, db_info = self._get_db("accessions")[self._packed_id][0]
+        self._blast_db = BLASTDatabase(db_info >> 8)
         self._blast_db_volume = db_info & 0xff
-        self._db_offset, self._length = None, None
+
+    @property
+    def tax_id(self):
+        if self._tax_id is None:
+            self._load_accession_data()
+        return self._tax_id
+
+    @property
+    def blast_db(self):
+        if self._blast_db is None:
+            self._load_accession_data()
+        return self._blast_db
 
     @property
     def blast_db_volume(self):
+        if self._blast_db_volume is None:
+            self._load_accession_data()
         return self._blast_db_volume
 
     @property
@@ -104,7 +121,7 @@ class Accession(DatabaseService):
         raise NotImplementedError()
 
     def __repr__(self):
-        return "{}.{}({})".format(self.__module__, self.__class__.__name__, self.accession_id)
+        return "{}.{}('{}')".format(self.__module__, self.__class__.__name__, self.accession_id)
 
 
 class Taxon(DatabaseService):
@@ -113,15 +130,14 @@ class Taxon(DatabaseService):
     """
     _db_dir = os.path.dirname(__file__)
     _db_files = {
-        "taxa": (marisa_trie.RecordTrie("IBBB"), os.path.join(_db_dir, "taxa.marisa")),
-        "sn2t": (marisa_trie.RecordTrie("I"), os.path.join(_db_dir, "sn2taxid.marisa")),
-        "scientific_names_pos": (marisa_trie.RecordTrie("I"), os.path.join(_db_dir, "scientific_names.marisa")),
-        "scientific_names": (zstandard, os.path.join(_db_dir, "scientific_names.zstd")),
-        "common_names_pos": (marisa_trie.RecordTrie("I"), os.path.join(_db_dir, "common_names.marisa")),
-        "common_names": (zstandard, os.path.join(_db_dir, "common_names.zstd")),
-        "taxid2refseqs_pos": (marisa_trie.RecordTrie("I"), os.path.join(_db_dir, "taxid2refseq.marisa")),
-        "taxid2refseqs": (zstandard, os.path.join(_db_dir, "taxid2refseq.zstd")),
+        "taxa": (RecordTrie("IBBB"), os.path.join(_db_dir, "taxa.marisa")),
+        "wikidata": (RecordTrie("I"), os.path.join(_db_dir, "wikidata.marisa")),
+        "sn2t": (RecordTrie("I"), os.path.join(_db_dir, "sn2taxid.marisa")),
     }
+    for string_index in "scientific_names", "common_names", "taxid2refseqs", "descriptions", "en_wiki_titles":
+        _db_files[string_index] = (zstandard, os.path.join(_db_dir, string_index + ".zstd"))
+        _db_files[string_index + "_pos"] = (RecordTrie("I"), os.path.join(_db_dir, string_index + ".marisa"))
+
     common_ranks = {
         Rank[i] for i in ("species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom")
     }
@@ -185,9 +201,12 @@ class Taxon(DatabaseService):
     @property
     def description(self) -> str:
         '''
-        Opening paragraph on Wikipedia
+        Introductory paragraph for this taxon from English Wikipedia, if available
         '''
-        raise NotImplementedError()
+        try:
+            return self._get_str_attr("description")
+        except KeyError:
+            return ""
 
     @property
     def host(self) -> 'Taxon':
@@ -195,7 +214,7 @@ class Taxon(DatabaseService):
 
     @property
     def refseq_representative_genome_accessions(self) -> List[Accession]:
-        return self._get_str_attr("taxid2refseq").split(",")
+        return [Accession(i) for i in self._get_str_attr("taxid2refseq").split(",")]
 
     @classmethod
     def lca(cls, taxa):
@@ -214,11 +233,25 @@ class Taxon(DatabaseService):
         '''
         pass
 
+    @property
     def url(self):
         '''
         URL of the NCBI Taxonomy web page for this taxon
         '''
-        raise NotImplementedError()
+        return f"https://www.ncbi.nlm.nih.gov/taxonomy/{self.tax_id}"
+
+    @property
+    def wikidata_id(self):
+        wikidata_id = self._get_db("wikidata")[str(self.tax_id)][0][0]
+        return f"Q{wikidata_id}"
+
+    @property
+    def wikidata_url(self):
+        '''
+        URL of the Wikidata web page for this taxon
+        '''
+        if self.wikidata_id:
+            return f"https://www.wikidata.org/wiki/{self.wikidata_id}"
 
     def __eq__(self, other):
         return self.tax_id == other.tax_id
