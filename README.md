@@ -121,8 +121,7 @@ with taxoniq.Accession("NC_000913.3").get_from_s3() as fh:
 To retrieve many sequences quickly, you may want to use a threadpool to open multiple network connections at once:
 ```python
 from concurrent.futures import ThreadPoolExecutor
-def fetch_seq(accession_id):
-    accession = taxoniq.Accession(accession_id)
+def fetch_seq(accession):
     seq = accession.get_from_s3().read()
     return (accession, seq)
 
