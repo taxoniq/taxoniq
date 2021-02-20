@@ -32,7 +32,7 @@ as described in the **Cookbook** section below.
 
 ## Synopsis
 
-```
+```python
 >>> import taxoniq
 >>> t = taxoniq.Taxon(9606)
 >>> t.scientific_name
@@ -79,7 +79,7 @@ as described in the **Cookbook** section below.
  cellular dimensions and morphology</p>...'
 ```
 
-```
+```python
 >>> t3 = taxoniq.Taxon(accession_id="NC_000913.3")
 >>> t3.scientific_name
 'Escherichia coli str. K-12 substr. MG1655"'
@@ -113,13 +113,13 @@ following NCBI BLAST databases:
 
 Given an accession ID, Taxoniq can issue a single HTTP request and return a file-like object streaming the nucleotide
 sequence for this accession from the S3 or GS mirror as follows:
-```
+```python
 with taxoniq.Accession("NC_000913.3").get_from_s3() as fh:
      fh.read()
 ```
 
 To retrieve many sequences quickly, you may want to use a threadpool to open multiple network connections at once:
-```
+```python
 from concurrent.futures import ThreadPoolExecutor
 def fetch_seq(accession_id):
     accession = taxoniq.Accession(accession_id)
