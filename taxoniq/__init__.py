@@ -209,6 +209,19 @@ class Taxon(DatabaseService):
             return ""
 
     @property
+    def best_available_description(self):
+        '''
+        Introductory paragraph from English Wikipedia for this taxon or the first parent taxon where a description is
+        available
+        '''
+        raise NotImplementedError()
+
+    @property
+    def best_refseq_taxon(self):
+        # best related taxon with refseq representative genome sequence available
+        raise NotImplementedError()
+
+    @property
     def host(self) -> 'Taxon':
         raise NotImplementedError()
 

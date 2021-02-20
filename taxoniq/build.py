@@ -368,8 +368,7 @@ def fetch_file(url):
 
 
 def load_wikidata(field="wikidata_id"):
-    # TODO: gzip, cache dir
-    with open("/mnt/wikipedia_extracts.json") as fh:
+    with open("wikipedia_extracts.json") as fh:
         for line in fh:
             record = json.loads(line)
             if field in record:

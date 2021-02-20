@@ -24,6 +24,8 @@ jobs:
       run: pip3 install wheel flake8
     - name: Install BLAST
       run: sudo apt-get install --yes ncbi-blast+
+    - name: Add placeholder file
+      run: cp test/sample_wikipedia_extract.json wikipedia_extracts.json
     - name: Install
       run: make install
     - name: Lint
