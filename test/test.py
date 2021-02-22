@@ -7,6 +7,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 
 import taxoniq
+import taxoniq.cli
 import taxoniq.build
 
 logging.basicConfig(level=logging.DEBUG)
