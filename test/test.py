@@ -14,6 +14,9 @@ logging.basicConfig(level=logging.DEBUG)
 
 class TestTaxoniq(unittest.TestCase):
     def test_taxon_interface(self):
+        t = taxoniq.Taxon(1)
+        self.assertEqual([c.scientific_name for c in t.child_nodes],
+                         ['Viruses', 'cellular organisms', 'unclassified entries', 'other entries'])
         t2 = taxoniq.Taxon(accession_id="NC_000913.3")
         self.assertEqual(t2, taxoniq.Taxon(511145))
         self.assertEqual(t2, taxoniq.Taxon(scientific_name="Escherichia coli str. K-12 substr. MG1655"))

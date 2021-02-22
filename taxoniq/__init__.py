@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Union
 from enum import Enum
 
 import urllib3
@@ -43,7 +43,12 @@ class DatabaseService:
         return self._databases[db_name]
 
 
-class Accession(DatabaseService):
+class ItemAttrAccess:
+    def __getitem__(self, item):
+        return getattr(self, item)
+
+
+class Accession(DatabaseService, ItemAttrAccess):
     """
     FIXME: add docstring
     """
@@ -124,7 +129,7 @@ class Accession(DatabaseService):
         return "{}.{}('{}')".format(self.__module__, self.__class__.__name__, self.accession_id)
 
 
-class Taxon(DatabaseService):
+class Taxon(DatabaseService, ItemAttrAccess):
     """
     FIXME: add docstring
     """
@@ -134,7 +139,10 @@ class Taxon(DatabaseService):
         "wikidata": (RecordTrie("I"), os.path.join(_db_dir, "wikidata.marisa")),
         "sn2t": (RecordTrie("I"), os.path.join(_db_dir, "sn2taxid.marisa")),
     }
-    for string_index in "scientific_names", "common_names", "taxid2refseqs", "descriptions", "en_wiki_titles":
+    _string_index_names = (
+        "scientific_names", "common_names", "taxid2refseqs", "descriptions", "en_wiki_titles", "child_nodes"
+    )
+    for string_index in _string_index_names:
         _db_files[string_index] = (zstandard, os.path.join(_db_dir, string_index + ".zstd"))
         _db_files[string_index + "_pos"] = (RecordTrie("I"), os.path.join(_db_dir, string_index + ".marisa"))
 
@@ -191,12 +199,23 @@ class Taxon(DatabaseService):
         return list(filter(lambda t: t.rank in self.common_ranks, self.lineage))
 
     @property
-    def parent(self) -> 'Taxon':
-        return Taxon(self._parent)
+    def parent(self) -> 'Union[Taxon, None]':
+        if self.tax_id == 0:
+            return None
+        else:
+            return Taxon(self._parent)
 
     @property
-    def children(self) -> 'List[Taxon]':
-        raise NotImplementedError()
+    def child_nodes(self) -> 'List[Taxon]':
+        return [Taxon(int(t)) for t in self._get_str_attr("child_node").split(",")]
+
+    @property
+    def ranked_child_nodes(self) -> 'List[Taxon]':
+        '''
+        List of child nodes in the next main taxonomic rank (species, genus, family, order, class, phylum, kingdom,
+        superkingdom)
+        '''
+        return list(filter(lambda t: t.rank in self.common_ranks, self.child_nodes))
 
     @property
     def description(self) -> str:

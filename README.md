@@ -48,6 +48,8 @@ as described in the **Cookbook** section below.
 >>> [(t.rank.name, t.scientific_name) for t in t.ranked_lineage]
 [('species', 'Homo sapiens'), ('genus', 'Homo'), ('family', 'Hominidae'), ('order', 'Primates'),
  ('class', 'Mammalia'), ('phylum', 'Chordata'), ('kingdom', 'Metazoa'), ('superkingdom', 'Eukaryota')]
+>>> [(c.rank.name, c.common_name) for c in t.child_nodes]
+[('subspecies', 'Neandertal'), ('subspecies', 'Denisova hominin')]
 
 >>> t.refseq_representative_genome_accessions[:10]
 [taxoniq.Accession('NC_000001.11'), taxoniq.Accession('NC_000002.12'), taxoniq.Accession('NC_000003.12'),
@@ -129,6 +131,42 @@ taxon = taxoniq.Taxon(scientific_name="Apis mellifera")
 for accession, seq in ThreadPoolExecutor().map(fetch_seq, taxon.refseq_representative_genome_accessions):
     print(accession, len(seq))
 ```
+
+## Command-line interface
+`pip3 install taxoniq` installs a command-line utility, `taxoniq`, which can be used to perform many of the same
+functions provided by the Python API:
+```
+>taxoniq child_nodes --taxon-id 2 --output-format '{tax_id}: {scientific_name}'
+[
+    "1224: Proteobacteria",
+    "2323: Bacteria incertae sedis",
+    "32066: Fusobacteria",
+    "40117: Nitrospirae",
+    "48479: environmental samples",
+    "49928: unclassified Bacteria",
+    "57723: Acidobacteria",
+    "68297: Dictyoglomi",
+    "74152: Elusimicrobia",
+    "200783: Aquificae",
+    "200918: Thermotogae",
+    "200930: Deferribacteres",
+    "200938: Chrysiogenetes",
+    "200940: Thermodesulfobacteria",
+    "203691: Spirochaetes",
+    "508458: Synergistetes",
+    "1783257: PVC group",
+    "1783270: FCB group",
+    "1783272: Terrabacteria group",
+    "1802340: Nitrospinae/Tectomicrobia group",
+    "1930617: Calditrichaeota",
+    "2138240: Coprothermobacterota",
+    "2498710: Caldiserica/Cryosericota group",
+    "2698788: Candidatus Krumholzibacteriota",
+    "2716431: Coleospermum",
+    "2780997: Vogosella"
+]
+```
+See `taxoniq --help` for full details.
 
 ## Using the nr/nt databases
 In progress

@@ -244,6 +244,7 @@ class WikipediaDescriptionClient:
         res_doc = json.loads(res.data)
         for page in res_doc["query"]["pages"].values():
             if page["ns"] == 0 and "extract" in page and "title" in page:
+                page["extract"] = page["extract"].replace('<p class="mw-empty-elt"> </p>', '').strip()
                 yield page
             else:
                 logger.error("Error retrieving extract: %s", page)
@@ -310,6 +311,15 @@ def load_taxa():
         rows_processed += 1
         if rows_processed % 100000 == 0:
             logger.info("Processed %d taxon rows", rows_processed)
+
+
+def load_child_nodes():
+    taxid2childnodes = defaultdict(list)
+    for tax_id, tax_data in load_taxa():
+        if tax_id != '1':
+            taxid2childnodes[tax_data[0]].append(tax_id)
+    for tax_id, child_nodes in taxid2childnodes.items():
+        yield tax_id, ",".join(child_nodes)
 
 
 def load_common_names(names):
@@ -391,6 +401,7 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
                                 destdir=destdir)
     # TODO: pack all bit fields into one byte
     marisa_trie.RecordTrie("IBBB", load_taxa()).save(os.path.join(destdir, 'taxa.marisa'))
+    write_taxid_to_string_index(mapping=load_child_nodes(), index_name="child_nodes", destdir=destdir)
 
     taxid2refseq = defaultdict(list)
 
