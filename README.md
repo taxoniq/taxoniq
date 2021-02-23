@@ -191,4 +191,4 @@ Distributions of this package contain text excerpts from Wikipedia licensed unde
 [CC-BY-SA License](LICENSE.WIKIPEDIA).
 
 ## Bugs
-Please report bugs, issues, feature requests, etc. on [GitHub](https://github.com/kislyuk/argcomplete/issues).
+Please report bugs, issues, feature requests, etc. on [GitHub](https://github.com/chanzuckerberg/taxoniq/issues).
