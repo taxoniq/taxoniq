@@ -11,7 +11,7 @@ taxoniq/version.py: setup.py
 
 build-vendored-deps:
 	-rm -rf marisa-trie/build marisa-trie/dist
-	cd marisa-trie; ./update_cpp.sh
+	cython -3 marisa-trie/src/*.pyx marisa-trie/src/*.pxd --cplus
 	cd marisa-trie; python3 setup.py bdist_wheel
 	pip3 install marisa-trie/dist/*.whl --target taxoniq/vendored
 
