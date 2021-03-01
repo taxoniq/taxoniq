@@ -18,10 +18,8 @@ setup(
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     install_requires=[
-        "marisa-trie >= 0.7.5",
         "zstandard >= 0.15.1",
         "urllib3 >= 1.25.8",
-        "click >= 7.0",
         "taxoniq-accessions == 2021.2.9.post2",
         "taxoniq-accession-lengths == 2021.2.9",
         "taxoniq-accession-offsets == 2021.2.9"

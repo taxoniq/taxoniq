@@ -1,7 +1,6 @@
 import json
 import logging
-
-import click
+import argparse
 
 from . import Taxon
 from .version import __version__
@@ -15,23 +14,26 @@ def print_json(data, output_format):
     print(json.dumps(data, indent=4, default=formatter))
 
 
-@click.command()
-@click.version_option(version=__version__)
-@click.argument("operation", type=click.Choice([attr for attr in dir(Taxon) if not attr.startswith("_")]))
-@click.option("--taxon-id", help="Numeric NCBI taxon ID")
-@click.option("--accession-id", help="Alphanumeric NCBI sequence accession ID")
-@click.option("--scientific-name", help="Unique scientific name of the taxon")
-@click.option("--output-format", help=("Format string for Taxon or Accession objects, e.g. {scientific_name} will "
-                                       "return a taxon's scientific name for each taxon in the results"))
-def cli(operation, taxon_id=None, accession_id=None, scientific_name=None, output_format=None):
+parser = argparse.ArgumentParser(prog="taxoniq")
+parser.add_argument("--version", action="version", version=__version__)
+parser.add_argument("operation", choices=[attr for attr in dir(Taxon) if not attr.startswith("_")])
+parser.add_argument("--taxon-id", help="Numeric NCBI taxon ID")
+parser.add_argument("--accession-id", help="Alphanumeric NCBI sequence accession ID")
+parser.add_argument("--scientific-name", help="Unique scientific name of the taxon")
+parser.add_argument("--output-format", help=("Format string for Taxon or Accession objects, e.g. {scientific_name} "
+                                             "will return a taxon's scientific name for each taxon in the results"))
+
+
+def cli():
     """
     Taxoniq: Taxon Information Query - fast, offline querying of NCBI Taxonomy and related data
 
     Run "taxoniq COMMAND --help" for command-specific usage and options.
     """
+    args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
 
-    if sum([int(bool(i)) for i in (taxon_id, accession_id, scientific_name)]) != 1:
-        raise click.UsageError("Expected exactly one of --taxon-id, --accession-id, or --scientific-name")
-    taxon = Taxon(tax_id=taxon_id, accession_id=accession_id, scientific_name=scientific_name)
-    print_json(getattr(taxon, operation), output_format=output_format)
+    if sum([int(bool(i)) for i in (args.taxon_id, args.accession_id, args.scientific_name)]) != 1:
+        raise argparse.ArgumentError("Expected exactly one of --taxon-id, --accession-id, or --scientific-name")
+    taxon = Taxon(tax_id=args.taxon_id, accession_id=args.accession_id, scientific_name=args.scientific_name)
+    print_json(getattr(taxon, args.operation), output_format=args.output_format)
