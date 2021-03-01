@@ -4,7 +4,7 @@ from enum import Enum
 
 import urllib3
 import zstandard
-from marisa_trie import RecordTrie
+from .vendored.marisa_trie import RecordTrie
 
 import taxoniq_accessions
 import taxoniq_accession_offsets

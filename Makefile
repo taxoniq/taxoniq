@@ -9,7 +9,13 @@ version: taxoniq/version.py
 taxoniq/version.py: setup.py
 	echo "__version__ = '$$(python3 setup.py --version)'" > $@
 
-build:
+build-vendored-deps:
+	-rm -rf marisa-trie/build marisa-trie/dist
+	cd marisa-trie; ./update_cpp.sh
+	cd marisa-trie; python3 setup.py bdist_wheel
+	pip3 install marisa-trie/dist/*.whl --target taxoniq/vendored
+
+build: build-vendored-deps
 	pip3 install --upgrade awscli marisa-trie zstandard urllib3 db_packages/*
 	mkdir -p $(BLASTDB)
 	aws s3 cp --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/latest-dir .
@@ -40,6 +46,6 @@ clean:
 	-rm -rf *.egg-info
 	-rm -rf $$(python3 setup.py --name)/*.{zstd,marisa}
 
-.PHONY: lint test docs install clean build
+.PHONY: lint test docs install clean build build-vendored-deps
 
 include common.mk

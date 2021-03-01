@@ -1,0 +1,3 @@
+[submodule "marisa-trie"]
+	path = marisa-trie
+	url = https://github.com/pytries/marisa-trie.git

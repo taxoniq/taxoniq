@@ -8,12 +8,12 @@ import io
 import struct
 from concurrent.futures import ThreadPoolExecutor
 from collections import defaultdict
+from hashlib import sha256
 
-import marisa_trie
 import zstandard
 import urllib3
 
-from . import Rank, Taxon, Accession, BLASTDatabase
+from . import Rank, Taxon, Accession, BLASTDatabase, RecordTrie
 
 logger = logging.getLogger(__name__)
 
@@ -355,16 +355,21 @@ def preprocess_accession_data(blast_db_names, taxid2refseq):
 
 def write_taxid_to_string_index(mapping, index_name, destdir):
     logger.info("Writing string index %s to %s...", index_name, destdir)
-    taxid2pos = {}
+    taxid2pos, str2pos = {}, {}
     string_db = io.BytesIO()
     for tax_id, string_value in mapping:
-        taxid2pos[tax_id] = string_db.tell()
-        string_db.write(string_value.replace("\n", " ").encode())
-        string_db.write(b"\n")
+        string_value_csum = sha256(string_value.encode()).digest()
+        if string_value_csum in str2pos:
+            taxid2pos[tax_id] = str2pos[string_value_csum]
+        else:
+            taxid2pos[tax_id] = string_db.tell()
+            string_db.write(string_value.replace("\n", " ").encode())
+            string_db.write(b"\n")
+            str2pos[string_value_csum] = taxid2pos[tax_id]
     with open(os.path.join(destdir, f"{index_name}.zstd"), "wb") as fh:
         fh.write(zstandard.compress(string_db.getvalue()))
 
-    t = marisa_trie.RecordTrie("I", [(str(tid), (pos, )) for tid, pos in taxid2pos.items()])
+    t = RecordTrie("I", [(str(tid), (pos, )) for tid, pos in taxid2pos.items()])
     t.save(os.path.join(destdir, f"{index_name}.marisa"))
     logger.info("Completed writing string index %s to %s", index_name, destdir)
 
@@ -395,12 +400,12 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
         cmd = "curl https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz | tar -xvz"
         subprocess.run(cmd, shell=True)
 
-    marisa_trie.RecordTrie("I", load_wikidata()).save(os.path.join(destdir, 'wikidata.marisa'))
+    RecordTrie("I", load_wikidata()).save(os.path.join(destdir, 'wikidata.marisa'))
     write_taxid_to_string_index(mapping=load_wikidata(field="extract"), index_name="descriptions", destdir=destdir)
     write_taxid_to_string_index(mapping=load_wikidata(field="en_wiki_title"), index_name="en_wiki_titles",
                                 destdir=destdir)
     # TODO: pack all bit fields into one byte
-    marisa_trie.RecordTrie("IBBB", load_taxa()).save(os.path.join(destdir, 'taxa.marisa'))
+    RecordTrie("IBBB", load_taxa()).save(os.path.join(destdir, 'taxa.marisa'))
     write_taxid_to_string_index(mapping=load_child_nodes(), index_name="child_nodes", destdir=destdir)
 
     taxid2refseq = defaultdict(list)
@@ -423,13 +428,13 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
 
     def db_path(db_package):
         return os.path.join(destdir, "..", "db_packages", db_package, db_package, "db.marisa")
-    t = marisa_trie.RecordTrie("IH", load_accession_data(acc_xform))
+    t = RecordTrie("IH", load_accession_data(acc_xform))
     t.save(db_path("taxoniq_accessions"))
     logger.info("Completed writing taxoniq_accessions db")
-    t = marisa_trie.RecordTrie("I", load_accession_data(lambda d: (d["packed_id"], (d["offset"], ))))
+    t = RecordTrie("I", load_accession_data(lambda d: (d["packed_id"], (d["offset"], ))))
     t.save(db_path("taxoniq_accession_offsets"))
     logger.info("Completed writing taxoniq_accession_offsets db")
-    t = marisa_trie.RecordTrie("I", load_accession_data(lambda d: (d["packed_id"], (d["length"], ))))
+    t = RecordTrie("I", load_accession_data(lambda d: (d["packed_id"], (d["length"], ))))
     t.save(db_path("taxoniq_accession_lengths"))
     logger.info("Completed writing taxoniq_accession_lengths db")
     write_taxid_to_string_index(mapping=[(tid, ",".join(acc)) for tid, acc in taxid2refseq.items()],
@@ -445,7 +450,7 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
             sn2taxid[row["name"]] = int(row["tax_id"])
     taxid2name_array = sorted(((tax_id, row["scientific name"]) for tax_id, row in names.items()), key=lambda i: i[1])
     write_taxid_to_string_index(mapping=taxid2name_array, index_name="scientific_names", destdir=destdir)
-    t = marisa_trie.RecordTrie("I", [(sn, (tid, )) for sn, tid in sn2taxid.items()])
+    t = RecordTrie("I", [(sn, (tid, )) for sn, tid in sn2taxid.items()])
     t.save(os.path.join(destdir, "sn2taxid.marisa"))
     write_taxid_to_string_index(mapping=load_common_names(names), index_name="common_names", destdir=destdir)
 
