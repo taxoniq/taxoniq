@@ -28,9 +28,9 @@ jobs:
       run: sudo apt-get install --yes ncbi-blast+
     - name: Add placeholder file
       run: cp test/sample_wikipedia_extract.json wikipedia_extracts.json
-    - name: Build and install package
-      run: make install
     - name: Lint
       run: make lint
+    - name: Build and install package
+      run: make install
     - name: Test
       run: make test
