@@ -23,7 +23,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install Python prerequisites
-      run: pip3 install wheel flake8
+      run: pip3 install wheel flake8 cython
     - name: Install BLAST
       run: sudo apt-get install --yes ncbi-blast+
     - name: Add placeholder file
