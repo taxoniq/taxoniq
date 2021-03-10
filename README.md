@@ -20,7 +20,7 @@ Taxoniq's features include:
 The Taxoniq package bundles an indexed, compressed copy of the
 [NCBI taxonomy database files](https://ncbiinsights.ncbi.nlm.nih.gov/2018/02/22/new-taxonomy-files-available-with-lineage-type-and-host-information/),
 the [NCBI RefSeq](https://www.ncbi.nlm.nih.gov/refseq/) nucleotide and protein accessions associated with each taxon,
-the [WoL](https://biocore.github.io/wol/) kingdom-wide phylogenetic distance database, and relevant information from
+the [WoL](https://biocore.github.io/wol/) kingdom-wide phylogenomic distance database, and relevant information from
 other databases. Accessions which appear in the NCBI RefSeq BLAST databases are indexed so that
 given a taxon ID, accession ID, or taxon name, you can quickly retrieve the taxon's rank, lineage, description,
 citations, representative RefSeq IDs, LCA information, evolutionary distance, sequence (with a network call), and more,
