@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="taxoniq",
-    version="0.0.8",
+    version="0.1.0",
     url="https://github.com/chanzuckerberg/taxoniq",
     project_urls={
         "Documentation": "https://chanzuckerberg.github.io/taxoniq",
@@ -20,9 +20,9 @@ setup(
     install_requires=[
         "zstandard >= 0.15.1",
         "urllib3 >= 1.25.8",
-        "taxoniq-accessions == 2021.2.9.post2",
-        "taxoniq-accession-lengths == 2021.2.9",
-        "taxoniq-accession-offsets == 2021.2.9"
+        "taxoniq-accessions == 2021.3.9",
+        "taxoniq-accession-lengths == 2021.3.9",
+        "taxoniq-accession-offsets == 2021.3.9"
     ],
     tests_require=["coverage", "flake8", "wheel"],
     packages=find_packages(exclude=["test"]),

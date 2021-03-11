@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="taxoniq-accession-offsets",
-    version="2021.2.9",
+    version="2021.3.9",
     url="https://github.com/chanzuckerberg/taxoniq",
     license="MIT License",
     author="Andrey Kislyuk",
