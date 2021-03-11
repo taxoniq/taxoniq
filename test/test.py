@@ -33,6 +33,7 @@ class TestTaxoniq(unittest.TestCase):
         self.assertEqual(t, taxoniq.Taxon(9606))
         self.assertEqual(t.scientific_name, "Homo sapiens")
         self.assertEqual(t.common_name, "human")
+        self.assertIn("anatomically modern human", t.description)
         self.assertEqual(t.parent, taxoniq.Taxon(9605))
         self.assertEqual(t.ranked_lineage, [taxoniq.Taxon(scientific_name='Homo sapiens'),
                                             taxoniq.Taxon(scientific_name='Homo'),
@@ -64,8 +65,14 @@ class TestTaxoniq(unittest.TestCase):
         self.assertEqual(a.length, 1745788)
         self.assertEqual(a.tax_id, 1817405)
 
+    def test_refseq_index(self):
+        t = taxoniq.Taxon(scientific_name="Mumps orthorubulavirus")
+        with self.assertRaises(KeyError):
+            t.refseq_representative_genome_accessions
+        self.assertEqual(t.refseq_genome_accessions, [taxoniq.Accession('AB040874.1')])
+
     @unittest.skipIf("CI" in os.environ, "Skippinng test that requires eukaryotic database")
-    def test_taxon2refseq(self):
+    def test_refseq_retrieval(self):
         def fetch_seq(accession):
             seq = accession.get_from_s3().read()
             return (accession, seq)

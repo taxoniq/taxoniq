@@ -14,186 +14,11 @@ import zstandard
 import urllib3
 
 from . import Rank, Taxon, Accession, BLASTDatabase, RecordTrie
+from .tax_dump_readers import NodesReader, TaxonomyNamesReader
 
 logger = logging.getLogger(__name__)
 
 http = urllib3.PoolManager()
-
-
-class TaxDumpReader:
-    def __init__(self):
-        self.fh = open(self.table_name + ".dmp")
-
-    def __iter__(self):
-        def cast(field, value):
-            value = value.rstrip("\t|")
-            if field[0] == "rank":
-                return Rank[value.replace(" ", "_")].value
-            if field[1] == int and value == "":
-                return None
-            return field[1](value)
-
-        for row in self.fh:
-            yield {self.fields[i][0]: cast(self.fields[i], value) for i, value in enumerate(row.strip().split("\t|\t"))}
-
-
-class NodesReader(TaxDumpReader):
-    table_name = "nodes"
-    fields = [
-        ("tax_id", int, "node id in GenBank taxonomy database"),
-        ("parent", int, "parent node id in GenBank taxonomy database"),
-        ("rank", str, "rank of this node (superkingdom, kingdom, ...)", Rank),
-        ("embl_code", str, "locus-name prefix; not unique", enum.Enum),
-        ("division_id", int, "see division.dmp file"),
-        ("inherited_div", int, "flag  (1 or 0); 1 if node inherits division from parent"),
-        ("genetic_code", int, "see gencode.dmp file"),
-        ("inherited_GC", int, "flag  (1 or 0); 1 if node inherits genetic code from parent"),
-        ("mitochondrial_genetic_code", int, "see gencode.dmp file"),
-        ("inherited_MGC", int, "flag  (1 or 0); 1 if node inherits mitochondrial gencode from parent"),
-        ("GenBank_hidden", int, "flag (1 or 0); 1 if name is suppressed in GenBank entry lineage"),
-        ("hidden_subtree_root", int, "flag (1 or 0); 1 if this subtree has no sequence data yet"),
-        ("comments", str, "free-text comments and citations"),
-        ("plastid_genetic_code", int, "see gencode.dmp file"),
-        ("inherited_PGC_flag", int, "flag (1 or 0); 1 if node inherits plastid gencode from parent"),
-        ("specified_species", int, "flag (1 or 0); 1 if species in the node's lineage has formal name"),
-        ("hydrogenosome_genetic_code", int, "see gencode.dmp file"),
-        ("inherited_HGC", int, "flag (1 or 0); 1 if node inherits hydrogenosome gencode from parent")
-    ]
-
-
-class TaxonomyNamesReader(TaxDumpReader):
-    """
-    See https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245000/
-    """
-    table_name = "names"
-    fields = [
-        ("tax_id", int, "the id of node associated with this name"),
-        ("name", str, "name itself"),
-        ("unique_name", str, "the unique variant of this name if name not unique"),
-        ("name_class", str, "(synonym, common name, ...)", enum.Enum)
-    ]
-
-
-class DivisionsReader(TaxDumpReader):
-    table_name = "division"
-    fields = [
-        ("division_id", int, "taxonomy database division id"),
-        ("division_code", str, "GenBank division code (three characters) e.g. BCT, PLN, VRT, MAM, PRI.."),
-        ("division_name", str),
-        ("comments", str)
-    ]
-
-
-class GeneticCodeReader(TaxDumpReader):
-    table_name = "gencode"
-    fields = [
-        ("genetic_code", int, "GenBank genetic code id"),
-        ("abbreviation", str, "genetic code name abbreviation"),
-        ("name", str, "genetic code name"),
-        ("cde", str, "translation table for this genetic code"),
-        ("starts", str, "start codons for this genetic code")
-    ]
-
-
-class DeletedNodesReader(TaxDumpReader):
-    table_name = "delnodes"
-    fields = [
-        ("tax_id", int, "deleted node id")
-    ]
-
-
-class MergedNodesReader(TaxDumpReader):
-    table_name = "merged"
-    fields = [
-        ("old_tax_id", int, "id of nodes which has been merged"),
-        ("new_tax_id", int, "id of nodes which is result of merging")
-    ]
-
-
-class CitationsReader(TaxDumpReader):
-    table_name = "citations"
-    fields = [
-        ("cit_id", int, "the unique id of citation"),
-        ("cit_key", str, "citation key"),
-        ("medline_id", int, "unique id in MedLine database (0 if not in MedLine)"),
-        ("pubmed_id", int, "unique id in PubMed database (0 if not in PubMed)"),
-        ("url", str, "URL associated with citation"),
-        ("text", str, """any text (usually article name and authors); The following characters are escaped in this text
-                         by a backslash: newline (appear as "\n"), tab character ("\t"), double quotes ('\"'),
-                         backslash character ("\\")."""),
-        ("taxid_list", str, "list of node ids separated by a single space")
-    ]
-
-
-class TypeOfTypeReader(TaxDumpReader):
-    table_name = "typeoftype"
-    fields = [
-        ("type_name", str, "name of type material type"),
-        ("synonyms", str, "alternative names for type material type"),
-        ("nomenclature", str, """Taxonomic Code of Nomenclature coded by a single letter:
-                                 -- B - International Code for algae, fungi and plants (ICN), previously Botanical Code,
-                                 -- P - International Code of Nomenclature of Prokaryotes (ICNP),
-                                 -- Z - International Code of Zoological Nomenclature (ICZN),
-                                 -- V - International Committee on Taxonomy of Viruses (ICTV) virus classification."""),
-        ("description", str, "descriptive text")
-    ]
-
-
-class HostReader(TaxDumpReader):
-    table_name = "host"
-    fields = [
-        ("tax_id", str, "node id"),
-        ("potential_hosts", str, "theoretical host list separated by comma ','")
-    ]
-
-
-class TypeMaterialReader(TaxDumpReader):
-    table_name = "typematerial"
-    fields = [
-        ("tax_id", int, "node id"),
-        ("tax_name", str, "organism name type material is assigned to"),
-        ("type", str, "type material type (see typeoftype.dmp)"),
-        ("identifier", str, "identifier in type material collection")
-    ]
-
-
-class RankedLineageReader(TaxDumpReader):
-    """
-    Select ancestor names for well-established taxonomic ranks
-    (species, genus, family, order, class, phylum, kingdom, superkingdom)
-    """
-    table_name = "rankedlineage"
-    fields = [
-        ("tax_id", int, "node id"),
-        ("tax_name", str, "scientific name of the organism"),
-        ("species_name", str, "name of a species (coincide with organism name for species-level nodes)"),
-        ("genus_name", str, "genus name when available"),
-        ("family_name", str, "family name when available"),
-        ("order_name", str, "order name when available"),
-        ("class_name", str, "class name when available"),
-        ("phylum_name", str, "phylum name when available"),
-        ("kingdom_name", str, "kingdom name when available"),
-        ("superkingdom_name", str, "superkingdom (domain) name when available")
-    ]
-
-
-class FullNameLineageReader(TaxDumpReader):
-    table_name = "fullnamelineage"
-    fields = [
-        ("tax_id", int, "node id"),
-        ("tax_name", str, "scientific name of the organism"),
-        ("lineage", str, ("sequence of sncestor names separated by semicolon ';' denoting nodes' ancestors starting "
-                          "from the most distant one and ending with the immediate one"))
-    ]
-
-
-class TaxIdLineageReader(TaxDumpReader):
-    table_name = "taxidlineage"
-    fields = [
-        ("tax_id", int, "node id"),
-        ("lineage", str, ("sequence of node ids separated by space denoting nodes' ancestors starting from the most "
-                          "distant one and ending with the immediate one"))
-    ]
 
 
 class WikipediaDescriptionClient:
@@ -334,7 +159,7 @@ def load_common_names(names):
             pass  # FIXME: fall back to en_wiki_title
 
 
-def preprocess_accession_data(blast_db_names, taxid2refseq):
+def preprocess_accession_data(blast_db_names, taxid2refrep):
     all_accessions, duplicate_accessions = set(), set()
     processed_accessions = 0
     for blast_db_name in blast_db_names:
@@ -343,8 +168,8 @@ def preprocess_accession_data(blast_db_names, taxid2refseq):
             if accession_id in all_accessions:
                 duplicate_accessions.add(accession_id)
                 continue
-            if blast_db_name.startswith("ref_"):
-                taxid2refseq[accession_info["tax_id"]].append(accession_id)
+            if blast_db_name.startswith("ref_") and "rep_genomes" in blast_db_name:
+                taxid2refrep[accession_info["tax_id"]].append(accession_id)
             yield accession_info
 
             processed_accessions += 1
@@ -401,18 +226,18 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
         subprocess.run(cmd, shell=True)
 
     RecordTrie("I", load_wikidata()).save(os.path.join(destdir, 'wikidata.marisa'))
-    write_taxid_to_string_index(mapping=load_wikidata(field="extract"), index_name="descriptions", destdir=destdir)
-    write_taxid_to_string_index(mapping=load_wikidata(field="en_wiki_title"), index_name="en_wiki_titles",
+    write_taxid_to_string_index(mapping=load_wikidata(field="extract"), index_name="description", destdir=destdir)
+    write_taxid_to_string_index(mapping=load_wikidata(field="en_wiki_title"), index_name="en_wiki_title",
                                 destdir=destdir)
     # TODO: pack all bit fields into one byte
     RecordTrie("IBBB", load_taxa()).save(os.path.join(destdir, 'taxa.marisa'))
     write_taxid_to_string_index(mapping=load_child_nodes(), index_name="child_nodes", destdir=destdir)
 
-    taxid2refseq = defaultdict(list)
+    taxid2refrep = defaultdict(list)
 
     accession_cache = os.path.join(os.environ["BLASTDB"], "accession_cache")
     with open(accession_cache, "w") as fh:
-        for acc_info in preprocess_accession_data(blast_databases, taxid2refseq=taxid2refseq):
+        for acc_info in preprocess_accession_data(blast_databases, taxid2refrep=taxid2refrep):
             print(json.dumps(acc_info), file=fh)
 
     def load_accession_data(xform):
@@ -437,8 +262,12 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
     t = RecordTrie("I", load_accession_data(lambda d: (d["packed_id"], (d["length"], ))))
     t.save(db_path("taxoniq_accession_lengths"))
     logger.info("Completed writing taxoniq_accession_lengths db")
-    write_taxid_to_string_index(mapping=[(tid, ",".join(acc)) for tid, acc in taxid2refseq.items()],
-                                index_name="taxid2refseqs", destdir=destdir)
+    write_taxid_to_string_index(mapping=[(tid, ",".join(acc)) for tid, acc in taxid2refrep.items()],
+                                index_name="taxid2refrep", destdir=destdir)
+
+    # FIXME: if we include non-rep refseq accessions, we should index those accessions' positions in nt
+    taxid2refseq = index_refseq_accessions(destdir=destdir)
+    write_taxid_to_string_index(mapping=taxid2refseq.items(), index_name="taxid2refseq", destdir=destdir)
 
     names, sn2taxid = defaultdict(dict), {}
     for row in TaxonomyNamesReader():
@@ -449,10 +278,10 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
         if row["name_class"] == "scientific name":
             sn2taxid[row["name"]] = int(row["tax_id"])
     taxid2name_array = sorted(((tax_id, row["scientific name"]) for tax_id, row in names.items()), key=lambda i: i[1])
-    write_taxid_to_string_index(mapping=taxid2name_array, index_name="scientific_names", destdir=destdir)
+    write_taxid_to_string_index(mapping=taxid2name_array, index_name="scientific_name", destdir=destdir)
     t = RecordTrie("I", [(sn, (tid, )) for sn, tid in sn2taxid.items()])
     t.save(os.path.join(destdir, "sn2taxid.marisa"))
-    write_taxid_to_string_index(mapping=load_common_names(names), index_name="common_names", destdir=destdir)
+    write_taxid_to_string_index(mapping=load_common_names(names), index_name="common_name", destdir=destdir)
 
 
 def process_assembly_report(assembly_summary):
@@ -475,7 +304,7 @@ def process_assembly_report(assembly_summary):
     return molecules
 
 
-def download_refseq_accessions(destdir=os.path.dirname(__file__)):
+def index_refseq_accessions(destdir=os.path.dirname(__file__)):
     # See https://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/#files
     # FIXME: neither genbank nor refseq id represented in nt
     # in assemblies: 6239 6239 Caenorhabditis elegans reference genome
@@ -488,9 +317,6 @@ def download_refseq_accessions(destdir=os.path.dirname(__file__)):
                                "version_status", "assembly_level", "release_type", "genome_rep", "seq_rel_date",
                                "asm_name", "submitter", "gbrs_paired_asm", "paired_asm_comp", "ftp_path",
                                "excluded_from_refseq", "relation_to_type_material")
-    a2t = Taxon._get_db(Taxon, "a2t")
-    taxa_with_refseq = defaultdict(int)
-    gb, mismatch = defaultdict(int), defaultdict(int)
     assembly_summaries = []
     with open(fetch_file(assembly_summary_url)) as assembly_summary_fh:
         for line in assembly_summary_fh:
@@ -500,31 +326,17 @@ def download_refseq_accessions(destdir=os.path.dirname(__file__)):
             if assembly_summary["release_type"] != "Major":
                 continue
             assembly_summaries.append(assembly_summary)
-    taxid2gbaccn = {}
-    duplicate_assy_taxids = defaultdict(set)
+    taxid2assemblies, taxid2accessions = defaultdict(list), {}
     for assembly_molecules in ThreadPoolExecutor().map(process_assembly_report, assembly_summaries):
-        accessions_for_taxon = []
-        for assembly_molecule in assembly_molecules:
-            if assembly_molecule["taxid"] in taxid2gbaccn:
-                # TODO: discard non-representative assemblies for taxa that have representative/reference ones
-                # TODO: investigate mismatch and duplicate assemblies
-                print(f"WARNING: multiple refseq assemblies found for {assembly_molecule}")
-                duplicate_assy_taxids[assembly_molecule["taxid"]].add(taxid2gbaccn[assembly_molecule["taxid"]])
-                duplicate_assy_taxids[assembly_molecule["taxid"]].add(assembly_molecule["genbank_accn"])
-            taxa_with_refseq[assembly_molecule["taxid"]] += 1
-            genbank_accn = assembly_molecule["genbank_accn"]
-            if genbank_accn.endswith(".1"):
-                genbank_accn = genbank_accn[:-len(".1")]
-            if genbank_accn in a2t:
-                gb[genbank_accn] += 1
-                accessions_for_taxon.append(genbank_accn)
-            else:
-                mismatch[genbank_accn] += 1
-        taxid2gbaccn[assembly_molecule["taxid"]] = ",".join(sorted(accessions_for_taxon))
-    print("taxa with refseq:", len(taxa_with_refseq), sum(taxa_with_refseq.values()))
-    print("gb accessions found in nt:", len(gb), sum(gb.values()))
-    print("gb accessions not found in nt:", len(mismatch), sum(mismatch.values()))
-    write_taxid_to_string_index(mapping=taxid2gbaccn.items(), index_name="taxid2refseq", destdir=destdir)
+        if len(assembly_molecules) == 0:
+            continue  # draft assembly
+        taxid2assemblies[assembly_molecules[0]["taxid"]].append(assembly_molecules)
+        if assembly_molecules[0]["species_taxid"] != assembly_molecules[0]["taxid"]:
+            taxid2assemblies[assembly_molecules[0]["species_taxid"]].append(assembly_molecules)
+    for taxid, assemblies in taxid2assemblies.items():
+        best_assembly = sorted(assemblies, key=assembly_sort_key)[-1]
+        taxid2accessions[taxid] = ",".join(sorted([m["genbank_accn"] for m in best_assembly]))
+    return taxid2accessions
 
 
 def load_accession_info_from_blast_db(db_name):
@@ -576,7 +388,21 @@ def load_accession_info_from_blast_db(db_name):
                 accession_info["offset"] = sequence_array[accession_info["ordinal_id"]]
                 yield (accession_id, accession_info)
 
+
+assembly_sort_preferences = {
+    "refseq_category": ["representative genome", "reference genome"],
+    "assembly_level": ["Contig", "Scaffold", "Chromosome", "Complete Genome"],
+    "genome_rep": ["Partial", "Full"]
+}
+
+
+def assembly_sort_key(assembly):
+    sort_key = []
+    for key, values in assembly_sort_preferences.items():
+        sort_key.append(values.index(assembly[0][key]) if assembly[0][key] in values else -1)
+    sort_key.append(assembly[0]["seq_rel_date"])
+    return sort_key
+
 # TODO: load WoL tree distance information
-# TODO: rank accessions by informativeness
 # TODO: load virus host and refseq data (Viruses_RefSeq_and_neighbors_genome_data.tab)
 # TODO: use blastdb-manifest.json

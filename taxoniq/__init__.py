@@ -125,6 +125,9 @@ class Accession(DatabaseService, ItemAttrAccess):
     def url(self):
         raise NotImplementedError()
 
+    def __eq__(self, other):
+        return self.accession_id == other.accession_id
+
     def __repr__(self):
         return "{}.{}('{}')".format(self.__module__, self.__class__.__name__, self.accession_id)
 
@@ -132,6 +135,7 @@ class Accession(DatabaseService, ItemAttrAccess):
 class Taxon(DatabaseService, ItemAttrAccess):
     """
     FIXME: add docstring
+    TODO: more attributes from structured metadata at species/strain level e.g. gc, ploidy, ...
     """
     _db_dir = os.path.dirname(__file__)
     _db_files = {
@@ -140,7 +144,7 @@ class Taxon(DatabaseService, ItemAttrAccess):
         "sn2t": (RecordTrie("I"), os.path.join(_db_dir, "sn2taxid.marisa")),
     }
     _string_index_names = (
-        "scientific_names", "common_names", "taxid2refseqs", "descriptions", "en_wiki_titles", "child_nodes"
+        "scientific_name", "common_name", "taxid2refrep", "taxid2refseq", "description", "en_wiki_title", "child_nodes"
     )
     for string_index in _string_index_names:
         _db_files[string_index] = (zstandard, os.path.join(_db_dir, string_index + ".zstd"))
@@ -165,8 +169,8 @@ class Taxon(DatabaseService, ItemAttrAccess):
 
     def _get_str_attr(self, attr_name):
         if attr_name not in self._str_attr_cache:
-            pos_db = self._get_db(attr_name + "s_pos")
-            str_db = self._get_db(attr_name + "s")
+            pos_db = self._get_db(attr_name + "_pos")
+            str_db = self._get_db(attr_name)
             pos = pos_db[str(self.tax_id)][0][0]
             self._str_attr_cache[attr_name] = str_db[pos:str_db.index(b"\n", pos)].decode()
         return self._str_attr_cache[attr_name]
@@ -207,7 +211,7 @@ class Taxon(DatabaseService, ItemAttrAccess):
 
     @property
     def child_nodes(self) -> 'List[Taxon]':
-        return [Taxon(int(t)) for t in self._get_str_attr("child_node").split(",")]
+        return [Taxon(int(t)) for t in self._get_str_attr("child_nodes").split(",")]
 
     @property
     def ranked_child_nodes(self) -> 'List[Taxon]':
@@ -246,6 +250,10 @@ class Taxon(DatabaseService, ItemAttrAccess):
 
     @property
     def refseq_representative_genome_accessions(self) -> List[Accession]:
+        return [Accession(i) for i in self._get_str_attr("taxid2refrep").split(",")]
+
+    @property
+    def refseq_genome_accessions(self) -> List[Accession]:
         return [Accession(i) for i in self._get_str_attr("taxid2refseq").split(",")]
 
     @classmethod
