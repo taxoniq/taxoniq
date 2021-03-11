@@ -1,7 +1,6 @@
 import os
 import sys
 import subprocess
-import enum
 import json
 import logging
 import io
@@ -13,7 +12,7 @@ from hashlib import sha256
 import zstandard
 import urllib3
 
-from . import Rank, Taxon, Accession, BLASTDatabase, RecordTrie
+from . import Accession, BLASTDatabase, RecordTrie
 from .tax_dump_readers import NodesReader, TaxonomyNamesReader
 
 logger = logging.getLogger(__name__)
