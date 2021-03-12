@@ -199,7 +199,9 @@ def write_taxid_to_string_index(mapping, index_name, destdir):
 
 
 def fetch_file(url):
-    local_filename = "/mnt/downloads/" + os.path.basename(url)
+    download_cache = os.path.join(os.environ["BLASTDB"], "downloads")
+    os.makedirs(download_cache, exist_ok=True)
+    local_filename = os.path.join(download_cache, os.path.basename(url))
     if not os.path.exists(local_filename):
         with open(local_filename, "w") as fh:
             fh.write(http.request("GET", url).data.decode())
@@ -265,7 +267,7 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
                                 index_name="taxid2refrep", destdir=destdir)
 
     # FIXME: if we include non-rep refseq accessions, we should index those accessions' positions in nt
-    taxid2refseq = index_refseq_accessions(destdir=destdir)
+    taxid2refseq = index_refseq_accessions(destdir=destdir, max_assemblies=2 if "CI" in os.environ else sys.maxsize)
     write_taxid_to_string_index(mapping=taxid2refseq.items(), index_name="taxid2refseq", destdir=destdir)
 
     names, sn2taxid = defaultdict(dict), {}
@@ -303,7 +305,7 @@ def process_assembly_report(assembly_summary):
     return molecules
 
 
-def index_refseq_accessions(destdir=os.path.dirname(__file__)):
+def index_refseq_accessions(destdir=os.path.dirname(__file__), max_assemblies=sys.maxsize):
     # See https://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/#files
     # FIXME: neither genbank nor refseq id represented in nt
     # in assemblies: 6239 6239 Caenorhabditis elegans reference genome
@@ -325,6 +327,8 @@ def index_refseq_accessions(destdir=os.path.dirname(__file__)):
             if assembly_summary["release_type"] != "Major":
                 continue
             assembly_summaries.append(assembly_summary)
+            if len(assembly_summaries) >= max_assemblies:
+                break
     taxid2assemblies, taxid2accessions = defaultdict(list), {}
     for assembly_molecules in ThreadPoolExecutor().map(process_assembly_report, assembly_summaries):
         if len(assembly_molecules) == 0:
