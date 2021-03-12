@@ -9,7 +9,6 @@ env:
   CIBW_MANYLINUX_I686_IMAGE: manylinux_2_24
   CIBW_MANYLINUX_PYPY_X86_64_IMAGE: manylinux_2_24
   CIBW_MANYLINUX_AARCH64_IMAGE: manylinux_2_24
-  CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_24
 
 jobs:
   build_wheels:
