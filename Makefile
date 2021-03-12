@@ -11,11 +11,12 @@ taxoniq/version.py: setup.py
 
 build-vendored-deps:
 	-rm -rf marisa-trie/build marisa-trie/dist
+	cython -3 marisa-trie/src/*.pyx marisa-trie/src/*.pxd --cplus
 	cd marisa-trie; python3 setup.py bdist_wheel
 	pip3 install marisa-trie/dist/*.whl --target taxoniq/vendored
 
 build: build-vendored-deps
-	pip3 install --upgrade awscli marisa-trie zstandard urllib3 db_packages/*
+	pip3 install --upgrade awscli zstandard urllib3 db_packages/*
 	mkdir -p $(BLASTDB)
 	aws s3 cp --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/latest-dir .
 	echo "blast_db_timestamp = '$$(cat latest-dir)'" > taxoniq/const.py
