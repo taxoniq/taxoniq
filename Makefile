@@ -10,7 +10,7 @@ taxoniq/version.py: setup.py
 	echo "__version__ = '$$(python3 setup.py --version)'" > $@
 
 build-vendored-deps:
-	cython -3 taxoniq/vendored/marisa-trie/src/*.pyx taxoniq/vendored/marisa-trie/src/*.pxd --cplus
+	cython -3 marisa-trie/src/*.pyx marisa-trie/src/*.pxd --cplus
 	python3 setup.py build_ext --inplace
 
 build: build-vendored-deps
