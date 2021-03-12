@@ -11,6 +11,7 @@ taxoniq/version.py: setup.py
 
 build-vendored-deps:
 	cython -3 marisa-trie/src/*.pyx marisa-trie/src/*.pxd --cplus
+	python3 setup.py build_clib
 	python3 setup.py build_ext --inplace
 
 build: build-vendored-deps
