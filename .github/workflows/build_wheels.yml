@@ -5,10 +5,9 @@ on: push
 
 env:
   BLASTDB: blast-db
-  CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_24
-  CIBW_MANYLINUX_I686_IMAGE: manylinux_2_24
-  CIBW_MANYLINUX_PYPY_X86_64_IMAGE: manylinux_2_24
-  CIBW_MANYLINUX_AARCH64_IMAGE: manylinux_2_24
+  CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_24_x86_64
+  CIBW_MANYLINUX_I686_IMAGE: quay.io/pypa/manylinux_2_24_i686
+  CIBW_MANYLINUX_AARCH64_IMAGE: quay.io/pypa/manylinux_2_24_aarch64
 
 jobs:
   build_wheels:
@@ -16,7 +15,7 @@ jobs:
     runs-on: ${{matrix.os}}
     timeout-minutes: 20
     env:
-      CIBW_SKIP: "cp27-* pp27-*"
+      CIBW_SKIP: "cp27-* pp*"
       CIBW_BEFORE_BUILD: "pip install cython"
     strategy:
       matrix:
