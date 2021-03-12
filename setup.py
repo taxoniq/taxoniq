@@ -1,6 +1,31 @@
 #!/usr/bin/env python3
 
-from setuptools import setup, find_packages
+'''
+TODO
+https://docs.github.com/en/actions/guides/building-and-testing-python#publishing-to-package-registries
+- scm managed version
+- break out all indexes into utility package (separate code and data - required to publish code package from github)
+'''
+
+import glob
+import itertools
+import os.path
+from setuptools import setup, find_packages, Extension
+
+MARISA_ROOT_DIR = "taxoniq/vendored/marisa-trie/marisa-trie"
+MARISA_SOURCE_DIR = os.path.join(MARISA_ROOT_DIR, "lib")
+MARISA_INCLUDE_DIR = os.path.join(MARISA_ROOT_DIR, "include")
+MARISA_FILES = [
+    "marisa/*.cc",
+    "marisa/grimoire.cc",
+    "marisa/grimoire/io/*.cc",
+    "marisa/grimoire/trie/*.cc",
+    "marisa/grimoire/vector/*.cc",
+]
+
+MARISA_FILES[:] = itertools.chain(
+    *(glob.glob(os.path.join(MARISA_SOURCE_DIR, path))
+      for path in MARISA_FILES))
 
 setup(
     name="taxoniq",
@@ -38,6 +63,23 @@ setup(
     platforms=["MacOS X", "Posix"],
     include_package_data=True,
     test_suite="test",
+    libraries=[("libmarisa-trie", {
+        "sources": MARISA_FILES,
+        "include_dirs": [MARISA_SOURCE_DIR, MARISA_INCLUDE_DIR]
+    })],
+    ext_modules=[
+        Extension("marisa_trie", [
+            "taxoniq/vendored/marisa-trie/src/agent.cpp",
+            "taxoniq/vendored/marisa-trie/src/base.cpp",
+            "taxoniq/vendored/marisa-trie/src/iostream.cpp",
+            "taxoniq/vendored/marisa-trie/src/key.cpp",
+            "taxoniq/vendored/marisa-trie/src/keyset.cpp",
+            "taxoniq/vendored/marisa-trie/src/marisa_trie.cpp",
+            "taxoniq/vendored/marisa-trie/src/query.cpp",
+            "taxoniq/vendored/marisa-trie/src/std_iostream.cpp",
+            "taxoniq/vendored/marisa-trie/src/trie.cpp"
+        ], include_dirs=[MARISA_INCLUDE_DIR])
+    ],
     classifiers=[
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
