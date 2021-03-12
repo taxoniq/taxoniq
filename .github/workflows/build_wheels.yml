@@ -3,6 +3,9 @@ name: Build wheels
 #on: release
 on: push
 
+env:
+  BLASTDB: blast-db
+
 jobs:
   build_wheels:
     name: Build wheels on ${{matrix.os}}
