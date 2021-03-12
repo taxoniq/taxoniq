@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
 
-'''
-TODO
-https://docs.github.com/en/actions/guides/building-and-testing-python#publishing-to-package-registries
-- scm managed version
-- break out all indexes into utility package (separate code and data - required to publish code package from github)
-'''
-
 import glob
 import itertools
 import os.path
