@@ -28,7 +28,7 @@ jobs:
           python-version: "3.8"
       - name: Install cibuildwheel
         run: |
-          python -m pip install cibuildwheel==1.10.0 cython
+          python -m pip install cibuildwheel==1.10.0 cython wheel
       - name: Build wheels
         run: |
           make build-vendored-deps
