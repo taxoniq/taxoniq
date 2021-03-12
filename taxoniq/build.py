@@ -267,7 +267,7 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
                                 index_name="taxid2refrep", destdir=destdir)
 
     # FIXME: if we include non-rep refseq accessions, we should index those accessions' positions in nt
-    taxid2refseq = index_refseq_accessions(destdir=destdir, max_assemblies=2 if "CI" in os.environ else sys.maxsize)
+    taxid2refseq = index_refseq_accessions(destdir=destdir)
     write_taxid_to_string_index(mapping=taxid2refseq.items(), index_name="taxid2refseq", destdir=destdir)
 
     names, sn2taxid = defaultdict(dict), {}
@@ -305,7 +305,7 @@ def process_assembly_report(assembly_summary):
     return molecules
 
 
-def index_refseq_accessions(destdir=os.path.dirname(__file__), max_assemblies=sys.maxsize):
+def index_refseq_accessions(destdir=os.path.dirname(__file__)):
     # See https://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/#files
     # FIXME: neither genbank nor refseq id represented in nt
     # in assemblies: 6239 6239 Caenorhabditis elegans reference genome
@@ -326,9 +326,10 @@ def index_refseq_accessions(destdir=os.path.dirname(__file__), max_assemblies=sy
             assembly_summary = dict(zip(assembly_summary_fields, line.strip().split("\t")))
             if assembly_summary["release_type"] != "Major":
                 continue
+            if "FETCH_REFSEQ_ASSEMBLIES" in os.environ:
+                if assembly_summary["organism_name"] not in os.environ["FETCH_REFSEQ_ASSEMBLIES"].split(","):
+                    continue
             assembly_summaries.append(assembly_summary)
-            if len(assembly_summaries) >= max_assemblies:
-                break
     taxid2assemblies, taxid2accessions = defaultdict(list), {}
     for assembly_molecules in ThreadPoolExecutor().map(process_assembly_report, assembly_summaries):
         if len(assembly_molecules) == 0:
