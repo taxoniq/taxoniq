@@ -169,7 +169,16 @@ functions provided by the Python API:
 See `taxoniq --help` for full details.
 
 ## Using the nr/nt databases
-In progress
+Because of their size, taxoniq wheels with indexes of the NT (GenBank Non-redundant nucleotide) BLAST database are
+distributed on GitHub instead of PyPI. After running `pip3 install taxoniq`, you can install the NT indexes as follows:
+
+- Navigate to https://github.com/chanzuckerberg/taxoniq/releases/latest
+- For each "Python Wheel with NT index" asset:
+  - Right-click on the asset link, and click "Copy link address"
+  - Run `pip3 install --upgrade <PASTED LINK ADDRESS>`
+
+The NT index packages also contain indexes for the Refseq representative genomes and Betacoronavirus accessions (meaning
+they are are superset of the PyPI packages).
 
 ## Cookbook
 In progress

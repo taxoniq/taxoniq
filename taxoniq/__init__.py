@@ -237,7 +237,12 @@ class Taxon(DatabaseService, ItemAttrAccess):
         Introductory paragraph from English Wikipedia for this taxon or the first parent taxon where a description is
         available
         '''
-        raise NotImplementedError()
+        t = self
+        while t.tax_id != 1:
+            if t.description:
+                return t.description
+            t = t.parent
+        return ""
 
     @property
     def best_refseq_taxon(self):
@@ -245,7 +250,10 @@ class Taxon(DatabaseService, ItemAttrAccess):
         raise NotImplementedError()
 
     @property
-    def host(self) -> 'Taxon':
+    def host(self) -> str:
+        '''
+        A text description of a symbiont host or hosts for this taxon's organism, if any.
+        '''
         raise NotImplementedError()
 
     @property
