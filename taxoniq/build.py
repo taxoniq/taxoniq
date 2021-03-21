@@ -19,6 +19,9 @@ logger = logging.getLogger(__name__)
 
 http = urllib3.PoolManager()
 
+db_packages_dir = os.path.join(os.path.dirname(__file__), "..", "db_packages")
+default_destdir = os.path.join(db_packages_dir, "taxoniq_db", "taxoniq_db")
+
 
 class WikipediaDescriptionClient:
     def get_taxonbar_page_ids(self):
@@ -216,7 +219,7 @@ def load_wikidata(field="wikidata_id"):
                 yield (record["taxid"], (int(record[field].lstrip("Q")), ) if field == "wikidata_id" else record[field])
 
 
-def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), destdir=os.path.dirname(__file__)):
+def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), destdir=default_destdir):
     logging.basicConfig(level=logging.INFO)
 
     if not blast_databases:
@@ -253,7 +256,7 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
         )
 
     def db_path(db_package):
-        return os.path.join(destdir, "..", "db_packages", db_package, db_package, "db.marisa")
+        return os.path.join(db_packages_dir, db_package, db_package, "db.marisa")
     t = RecordTrie("IH", load_accession_data(acc_xform))
     t.save(db_path("taxoniq_accessions"))
     logger.info("Completed writing taxoniq_accessions db")
@@ -305,7 +308,7 @@ def process_assembly_report(assembly_summary):
     return molecules
 
 
-def index_refseq_accessions(destdir=os.path.dirname(__file__)):
+def index_refseq_accessions(destdir):
     # See https://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/#files
     # FIXME: neither genbank nor refseq id represented in nt
     # in assemblies: 6239 6239 Caenorhabditis elegans reference genome

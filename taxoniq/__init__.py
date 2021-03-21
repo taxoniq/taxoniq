@@ -6,6 +6,7 @@ import urllib3
 import zstandard
 from .vendored.marisa_trie import RecordTrie
 
+import taxoniq_db
 import taxoniq_accessions
 import taxoniq_accession_offsets
 import taxoniq_accession_lengths
@@ -137,7 +138,7 @@ class Taxon(DatabaseService, ItemAttrAccess):
     FIXME: add docstring
     TODO: more attributes from structured metadata at species/strain level e.g. gc, ploidy, ...
     """
-    _db_dir = os.path.dirname(__file__)
+    _db_dir = taxoniq_db.db_dir
     _db_files = {
         "taxa": (RecordTrie("IBBB"), os.path.join(_db_dir, "taxa.marisa")),
         "wikidata": (RecordTrie("I"), os.path.join(_db_dir, "wikidata.marisa")),
