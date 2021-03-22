@@ -67,8 +67,6 @@ class TestTaxoniq(unittest.TestCase):
 
     def test_refseq_index(self):
         t = taxoniq.Taxon(scientific_name="Mumps orthorubulavirus")
-        with self.assertRaises(KeyError):
-            t.refseq_representative_genome_accessions
         self.assertEqual(t.refseq_genome_accessions, [taxoniq.Accession('AB040874.1')])
 
     @unittest.skipIf("CI" in os.environ, "Skippinng test that requires eukaryotic database")

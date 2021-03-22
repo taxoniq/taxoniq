@@ -37,9 +37,7 @@ setup(
     install_requires=[
         "zstandard >= 0.15.1",
         "urllib3 >= 1.25.8",
-        "taxoniq-accessions == 2021.3.9",
-        "taxoniq-accession-lengths == 2021.3.9",
-        "taxoniq-accession-offsets == 2021.3.9"
+        "taxoniq-db == 2021.3.20"
     ],
     tests_require=["coverage", "flake8", "wheel"],
     packages=find_packages(exclude=["test"]),
