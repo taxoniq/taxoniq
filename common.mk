@@ -12,9 +12,8 @@ release-patch:
 	$(eval export TAG=$(shell git describe --tags --match 'v*.*.*' | perl -ne '/^v(\d+)\.(\d+)\.(\d+)/; print "v$$1.$$2.@{[$$3+1]}"'))
 	$(MAKE) release
 
-release:
+init-release-env:
 	@if ! git diff --cached --exit-code; then echo "Commit staged files before proceeding"; exit 1; fi
-	@if [[ -z $$TAG ]]; then echo "Use release-{major,minor,patch}"; exit 1; fi
 	@if ! type -P pandoc; then echo "Please install pandoc"; exit 1; fi
 	@if ! type -P sponge; then echo "Please install moreutils"; exit 1; fi
 	@if ! type -P http; then echo "Please install httpie"; exit 1; fi
@@ -24,6 +23,10 @@ release:
 	$(eval GH_AUTH=$(shell if grep -q '@github.com' ~/.git-credentials; then echo $$(grep '@github.com' ~/.git-credentials | python3 -c 'import sys, urllib.parse as p; print(p.urlparse(sys.stdin.read()).netloc.split("@")[0])'); else echo $(GIT_USER); fi))
 	$(eval RELEASES_API=https://api.github.com/repos/${REMOTE}/releases)
 	$(eval UPLOADS_API=https://uploads.github.com/repos/${REMOTE}/releases)
+
+release:
+	$(MAKE) init-release-env
+	@if [[ -z $$TAG ]]; then echo "Use release-{major,minor,patch}"; exit 1; fi
 	git pull
 	git clean -x --force $$(python setup.py --name)
 	sed -i -e "s/version=\([\'\"]\)[0-9]*\.[0-9]*\.[0-9]*/version=\1$${TAG:1}/" setup.py
@@ -40,10 +43,17 @@ release:
 	http --check-status --auth ${GH_AUTH} ${RELEASES_API} tag_name=${TAG} name=${TAG} \
 	    body="$$(git tag --list ${TAG} -n99 | perl -pe 's/^\S+\s*// if $$. == 1' | sed 's/^\s\s\s\s//')"
 	$(MAKE) install
-	http --check-status --auth ${GH_AUTH} POST ${UPLOADS_API}/$$(http --auth ${GH_AUTH} ${RELEASES_API}/latest | jq .id)/assets \
-	    name==$$(basename dist/*.whl) label=="Python Wheel" < dist/*.whl
-	$(MAKE) release-pypi
-	$(MAKE) release-docs
+# FIXME: this will fail (needs manylinux wheel). Instead, wait for CI to complete, download the wheel artifacts, and upload those
+#	http --check-status --auth ${GH_AUTH} POST ${UPLOADS_API}/$$(http --auth ${GH_AUTH} ${RELEASES_API}/latest | jq .id)/assets \
+#	    name==$$(basename dist/*.whl) label=="Python Wheel" < dist/*.whl
+#	$(MAKE) release-pypi
+# FIXME: re-enable after testing
+#	$(MAKE) release-docs
+
+release-db-packages:
+	$(MAKE) init-release-env
+	sed -i -e "s/20[0-9][0-9].[0-9]*.[0-9]*/$$(cat latest-dir | cut -f 1-3 -d - | sed -e 's/-/./g' -e 's/\.0/\./')/" setup.py db_packages/*/setup.py
+	for p in db_packages/*; do python $$p/setup.py bdist_wheel; done
 
 release-pypi:
 	python setup.py sdist bdist_wheel
