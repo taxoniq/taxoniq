@@ -36,4 +36,5 @@ jobs:
           python -m cibuildwheel --output-dir wheelhouse
       - uses: actions/upload-artifact@v2
         with:
+          name: wheels
           path: ./wheelhouse/*.whl
