@@ -4,11 +4,11 @@ from setuptools import setup, find_packages
 
 setup(
     name="taxoniq-db",
-    version="2021.3.20",
+    version="2021.3.9",
     install_requires=[
-        "taxoniq-accessions == 2021.3.20",
-        "taxoniq-accession-lengths == 2021.3.20",
-        "taxoniq-accession-offsets == 2021.3.20"
+        "taxoniq-accessions == 2021.3.9",
+        "taxoniq-accession-lengths == 2021.3.9",
+        "taxoniq-accession-offsets == 2021.3.9"
     ],
     url="https://github.com/chanzuckerberg/taxoniq",
     license="MIT License",
