@@ -41,9 +41,9 @@ install: clean version build
 	pip3 install --upgrade db_packages/*
 
 clean:
-	-rm -rf build dist
+	-rm -rf build dist db_packages/*/{build,dist}
 	-rm -rf *.egg-info
-	-rm -rf $$(python3 setup.py --name)/*.{zstd,marisa}
+	-rm -rf db-packages/*/*/*.{zstd,marisa}
 
 .PHONY: lint test docs install clean build build-vendored-deps
 

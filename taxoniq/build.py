@@ -207,7 +207,9 @@ def fetch_file(url):
     local_filename = os.path.join(download_cache, os.path.basename(url))
     if not os.path.exists(local_filename):
         with open(local_filename, "w") as fh:
-            fh.write(http.request("GET", url).data.decode())
+            res = http.request("GET", url)
+            assert res.status == 200
+            fh.write(res.data.decode())
     return local_filename
 
 
