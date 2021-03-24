@@ -135,9 +135,11 @@ class Accession(DatabaseService, ItemAttrAccess):
 
 class Taxon(DatabaseService, ItemAttrAccess):
     """
-    FIXME: add docstring
-    TODO: more attributes from structured metadata at species/strain level e.g. gc, ploidy, ...
+    An object representing an NCBI Taxonomy taxon, identified by its taxon ID. The object can be instantiated by
+    uniquely identifying a taxon using the numeric taxon ID, an alphanumeric accession ID of a sequence associated with
+    the taxon ID, or the scientific name of the taxon.
     """
+    #TODO: more attributes from structured metadata at species/strain level e.g. gc, ploidy, ...
     _db_dir = taxoniq_db.db_dir
     _db_files = {
         "taxa": (RecordTrie("IBBB"), os.path.join(_db_dir, "taxa.marisa")),
