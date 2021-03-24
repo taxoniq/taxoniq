@@ -21,6 +21,7 @@ init-release-env:
 	$(eval REMOTE=$(shell git remote get-url origin | perl -ne '/([^\/\:]+\/.+?)(\.git)?$$/; print $$1'))
 	$(eval GIT_USER=$(shell git config --get user.email))
 	$(eval GH_AUTH=$(shell if grep -q '@github.com' ~/.git-credentials; then echo $$(grep '@github.com' ~/.git-credentials | python3 -c 'import sys, urllib.parse as p; print(p.urlparse(sys.stdin.read()).netloc.split("@")[0])'); else echo $(GIT_USER); fi))
+	$(eval REPOS_API=https://api.github.com/repos/${REMOTE})
 	$(eval RELEASES_API=https://api.github.com/repos/${REMOTE}/releases)
 	$(eval UPLOADS_API=https://uploads.github.com/repos/${REMOTE}/releases)
 	git pull
@@ -42,11 +43,11 @@ release:
 	git push --follow-tags
 	http --check-status --auth ${GH_AUTH} ${RELEASES_API} tag_name=${TAG} name=${TAG} \
 	    body="$$(git tag --list ${TAG} -n99 | perl -pe 's/^\S+\s*// if $$. == 1' | sed 's/^\s\s\s\s//')"
-	$(MAKE) install
-# FIXME: this will fail (needs manylinux wheel). Instead, wait for CI to complete, download the wheel artifacts, and upload those
-#	http --check-status --auth ${GH_AUTH} POST ${UPLOADS_API}/$$(http --auth ${GH_AUTH} ${RELEASES_API}/latest | jq .id)/assets \
-#	    name==$$(basename dist/*.whl) label=="Python Wheel" < dist/*.whl
-#	$(MAKE) release-pypi
+	while http ${REPOS_API}/commits/${TAG}/check-runs | jq -e '.check_runs[] | select(.name|match("Build wheels"))|select(.conclusion != "success")' > /dev/null; do echo "Waiting for wheels to build..."; sleep 10; done
+	-rm -f dist wheels.zip
+	http --download --follow --auth ${GH_AUTH} $$(http $$(http ${REPOS_API}/actions/artifacts | jq -r .artifacts[0].url) | jq -r .archive_download_url)
+	unzip -d dist wheels.zip
+	$(MAKE) release-pypi
 # FIXME: re-enable after testing
 #	$(MAKE) release-docs
 
@@ -60,7 +61,7 @@ release-db-packages:
 	twine upload db_packages/*/dist/*.whl --sign --verbose
 
 release-pypi:
-	python setup.py sdist bdist_wheel
+	python setup.py sdist
 	twine upload dist/*.tar.gz dist/*.whl --sign --verbose
 
 release-docs:
