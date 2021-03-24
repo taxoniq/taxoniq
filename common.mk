@@ -23,11 +23,11 @@ init-release-env:
 	$(eval GH_AUTH=$(shell if grep -q '@github.com' ~/.git-credentials; then echo $$(grep '@github.com' ~/.git-credentials | python3 -c 'import sys, urllib.parse as p; print(p.urlparse(sys.stdin.read()).netloc.split("@")[0])'); else echo $(GIT_USER); fi))
 	$(eval RELEASES_API=https://api.github.com/repos/${REMOTE}/releases)
 	$(eval UPLOADS_API=https://uploads.github.com/repos/${REMOTE}/releases)
+	git pull
 
 release:
 	$(MAKE) init-release-env
 	@if [[ -z $$TAG ]]; then echo "Use release-{major,minor,patch}"; exit 1; fi
-	git pull
 	git clean -x --force $$(python setup.py --name)
 	sed -i -e "s/version=\([\'\"]\)[0-9]*\.[0-9]*\.[0-9]*/version=\1$${TAG:1}/" setup.py
 	git add setup.py
@@ -53,7 +53,11 @@ release:
 release-db-packages:
 	$(MAKE) init-release-env
 	sed -i -e "s/20[0-9][0-9].[0-9]*.[0-9]*/$$(cat latest-dir | cut -f 1-3 -d - | sed -e 's/-/./g' -e 's/\.0/\./')/" setup.py db_packages/*/setup.py
-	for p in db_packages/*; do python $$p/setup.py bdist_wheel; done
+	git add setup.py db_packages/*/setup.py
+	git commit -m "Update data packages to version $$(cat latest-dir | cut -f 1-3 -d -)"
+	git push
+	for p in db_packages/*; do (cd $$p; python setup.py bdist_wheel); done
+	twine upload db_packages/*/dist/*.whl --sign --verbose
 
 release-pypi:
 	python setup.py sdist bdist_wheel
