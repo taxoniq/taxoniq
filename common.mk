@@ -40,6 +40,8 @@ release:
 	git push --follow-tags
 	http --check-status --auth ${GH_AUTH} ${RELEASES_API} tag_name=${TAG} name=${TAG} \
 	    body="$$(git tag --list ${TAG} -n99 | perl -pe 's/^\S+\s*// if $$. == 1' | sed 's/^\s\s\s\s//')"
+	echo "Waiting for release build to start..."
+	sleep 30
 	while http ${REPOS_API}/commits/${TAG}/check-runs | jq -e '.check_runs[] | select(.name|match("Build wheels"))|select(.conclusion != "success")' > /dev/null; do echo "Waiting for wheels to build..."; sleep 10; done
 	-rm -f dist wheels.zip
 	http --download --follow --auth ${GH_AUTH} $$(http $$(http ${REPOS_API}/actions/artifacts | jq -r .artifacts[0].url) | jq -r .archive_download_url)
