@@ -23,6 +23,11 @@ Changes for v0.1.1 (2021-03-24)
 
 -  Test release script
 
+Changes for v0.1.1 (2021-03-24)
+===============================
+
+-  Test release script
+
 Changes for v1.0.0 (2020-07-15)
 ===============================
 
