@@ -12,12 +12,14 @@ release-patch:
 	$(eval export TAG=$(shell git describe --tags --match 'v*.*.*' | perl -ne '/^v(\d+)\.(\d+)\.(\d+)/; print "v$$1.$$2.@{[$$3+1]}"'))
 	$(MAKE) release
 
-release:
-	@if ! git diff --cached --exit-code; then echo "Commit staged files before proceeding"; exit 1; fi
+check-release-deps:
+	@if ! git diff --cached --exit-code; then echo "Please commit staged files before proceeding"; exit 1; fi
 	@if ! type -P pandoc; then echo "Please install pandoc"; exit 1; fi
 	@if ! type -P sponge; then echo "Please install moreutils"; exit 1; fi
 	@if ! type -P http; then echo "Please install httpie"; exit 1; fi
 	@if ! type -P twine; then echo "Please install twine"; exit 1; fi
+
+release: check-release-deps
 	$(eval REMOTE=$(shell git remote get-url origin | perl -ne '/([^\/\:]+\/.+?)(\.git)?$$/; print $$1'))
 	$(eval GIT_USER=$(shell git config --get user.email))
 	$(eval GH_AUTH=$(shell if grep -q '@github.com' ~/.git-credentials; then echo $$(grep '@github.com' ~/.git-credentials | python3 -c 'import sys, urllib.parse as p; print(p.urlparse(sys.stdin.read()).netloc.split("@")[0])'); else echo $(GIT_USER); fi))
@@ -51,12 +53,7 @@ release:
 # FIXME: re-enable after testing
 #	$(MAKE) release-docs
 
-release-db-packages:
-	@if ! git diff --cached --exit-code; then echo "Commit staged files before proceeding"; exit 1; fi
-	@if ! type -P pandoc; then echo "Please install pandoc"; exit 1; fi
-	@if ! type -P sponge; then echo "Please install moreutils"; exit 1; fi
-	@if ! type -P http; then echo "Please install httpie"; exit 1; fi
-	@if ! type -P twine; then echo "Please install twine"; exit 1; fi
+release-db-packages: check-release-deps
 	$(eval REMOTE=$(shell git remote get-url origin | perl -ne '/([^\/\:]+\/.+?)(\.git)?$$/; print $$1'))
 	$(eval GIT_USER=$(shell git config --get user.email))
 	$(eval GH_AUTH=$(shell if grep -q '@github.com' ~/.git-credentials; then echo $$(grep '@github.com' ~/.git-credentials | python3 -c 'import sys, urllib.parse as p; print(p.urlparse(sys.stdin.read()).netloc.split("@")[0])'); else echo $(GIT_USER); fi))
@@ -87,4 +84,4 @@ release-docs:
 	git push --force origin $$(git subtree split --prefix docs/html --branch gh-pages):refs/heads/gh-pages
 	git checkout -
 
-.PHONY: release
+.PHONY: release* check-release-deps

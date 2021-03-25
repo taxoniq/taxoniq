@@ -6,10 +6,21 @@ import urllib3
 import zstandard
 from .vendored.marisa_trie import RecordTrie
 
-import taxoniq_db
-import taxoniq_accessions
-import taxoniq_accession_offsets
-import taxoniq_accession_lengths
+import ncbi_taxon_db
+
+try:
+    import ncbi_genbank_accession_db as accession_db
+except ImportError:
+    import ncbi_refseq_accession_db as accession_db
+try:
+    import ncbi_genbank_accession_lengths as accession_lengths
+except ImportError:
+    import ncbi_refseq_accession_lengths as accession_lengths
+try:
+    import ncbi_genbank_accession_offsets as accession_offsets
+except ImportError:
+    import ncbi_refseq_accession_offsets as accession_offsets
+
 from .const import blast_db_timestamp
 from .util import TwoBitDecoder
 
@@ -54,9 +65,9 @@ class Accession(DatabaseService, ItemAttrAccess):
     FIXME: add docstring
     """
     _db_files = {
-        "accessions": (RecordTrie("IH"), taxoniq_accessions.db),
-        "accession_offsets": (RecordTrie("I"), taxoniq_accession_offsets.db),
-        "accession_lengths": (RecordTrie("I"), taxoniq_accession_lengths.db)
+        "accessions": (RecordTrie("IH"), accession_db.db),
+        "accession_offsets": (RecordTrie("I"), accession_offsets.db),
+        "accession_lengths": (RecordTrie("I"), accession_lengths.db)
     }
     http = urllib3.PoolManager(maxsize=min(32, os.cpu_count() + 4))
     s3_host = "ncbi-blast-databases.s3.amazonaws.com"
@@ -140,7 +151,7 @@ class Taxon(DatabaseService, ItemAttrAccess):
     the taxon ID, or the scientific name of the taxon.
     """
     # TODO: more attributes from structured metadata at species/strain level e.g. gc, ploidy, ...
-    _db_dir = taxoniq_db.db_dir
+    _db_dir = ncbi_taxon_db.db_dir
     _db_files = {
         "taxa": (RecordTrie("IBBB"), os.path.join(_db_dir, "taxa.marisa")),
         "wikidata": (RecordTrie("I"), os.path.join(_db_dir, "wikidata.marisa")),

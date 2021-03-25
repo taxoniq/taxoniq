@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="taxoniq-accessions",
+    name="ncbi-genbank-accession-offsets",
     version="2021.3.23",
     url="https://github.com/chanzuckerberg/taxoniq",
     license="MIT License",

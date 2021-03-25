@@ -37,7 +37,7 @@ setup(
     install_requires=[
         "zstandard >= 0.15.1",
         "urllib3 >= 1.25.8",
-        "taxoniq-db == 2021.3.23"
+        "ncbi-refseq-taxon-db >= 2021.3.23"
     ],
     tests_require=["coverage", "flake8", "wheel"],
     packages=find_packages(exclude=["test"]),

@@ -3,18 +3,13 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="taxoniq-db",
+    name="ncbi-genbank-accession-db",
     version="2021.3.23",
-    install_requires=[
-        "taxoniq-accessions == 2021.3.23",
-        "taxoniq-accession-lengths == 2021.3.23",
-        "taxoniq-accession-offsets == 2021.3.23"
-    ],
     url="https://github.com/chanzuckerberg/taxoniq",
     license="MIT License",
     author="Andrey Kislyuk",
     author_email="akislyuk@chanzuckerberg.com",
-    description="Taxoniq index for NCBI Taxonomy database",
+    description="Taxoniq accession index for NCBI BLAST databases",
     packages=find_packages(),
     include_package_data=True
 )

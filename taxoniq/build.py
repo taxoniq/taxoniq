@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 http = urllib3.PoolManager()
 
 db_packages_dir = os.path.join(os.path.dirname(__file__), "..", "db_packages")
-default_destdir = os.path.join(db_packages_dir, "taxoniq_db", "taxoniq_db")
 
 
 class WikipediaDescriptionClient:
@@ -221,8 +220,11 @@ def load_wikidata(field="wikidata_id"):
                 yield (record["taxid"], (int(record[field].lstrip("Q")), ) if field == "wikidata_id" else record[field])
 
 
-def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), destdir=default_destdir):
+def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), destdir=None):
     logging.basicConfig(level=logging.INFO)
+
+    if destdir is None:
+        destdir = os.path.join(db_packages_dir, "ncbi_taxon_db", "ncbi_taxon_db")
 
     if not blast_databases:
         blast_databases = [db.name for db in BLASTDatabase]
@@ -253,17 +255,20 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
             (acc_info["tax_id"], ((BLASTDatabase[acc_info["db_name"]].value << 8) + acc_info["volume_id"]))
         )
 
-    def db_path(db_package):
+    def db_path(db_name):
+        ncbi_db_name = "genbank" if "nt" in blast_databases else "refseq"
+        db_package = f"ncbi_{ncbi_db_name}_{db_name}"
         return os.path.join(db_packages_dir, db_package, db_package, "db.marisa")
+
     t = RecordTrie("IH", load_accession_data(acc_xform))
-    t.save(db_path("taxoniq_accessions"))
-    logger.info("Completed writing taxoniq_accessions db")
+    t.save(db_path("accession_db"))
+    logger.info("Completed writing %s", db_path("accession_db"))
     t = RecordTrie("I", load_accession_data(lambda d: (d["packed_id"], (d["offset"], ))))
-    t.save(db_path("taxoniq_accession_offsets"))
-    logger.info("Completed writing taxoniq_accession_offsets db")
+    t.save(db_path("accession_offsets"))
+    logger.info("Completed writing %s", db_path("accession_offsets"))
     t = RecordTrie("I", load_accession_data(lambda d: (d["packed_id"], (d["length"], ))))
-    t.save(db_path("taxoniq_accession_lengths"))
-    logger.info("Completed writing taxoniq_accession_lengths db")
+    t.save(db_path("accession_lengths"))
+    logger.info("Completed writing %s", db_path("accession_lengths"))
     write_taxid_to_string_index(mapping=[(tid, ",".join(acc)) for tid, acc in taxid2refrep.items()],
                                 index_name="taxid2refrep", destdir=destdir)
 
