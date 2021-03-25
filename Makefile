@@ -14,11 +14,14 @@ build-vendored-deps:
 	python3 setup.py build_clib
 	python3 setup.py build_ext --inplace
 
+write-const:
+	echo "blast_db_timestamp = '$$(cat latest-dir)'" > taxoniq/const.py
+
 build: build-vendored-deps
 	pip3 install --upgrade awscli zstandard urllib3 db_packages/*
 	mkdir -p $(BLASTDB)
 	aws s3 cp --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/latest-dir .
-	echo "blast_db_timestamp = '$$(cat latest-dir)'" > taxoniq/const.py
+	$(MAKE) write-const
 ifdef BLAST_DATABASES
 	aws s3 sync --quiet --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/$$(cat latest-dir)/ $(BLASTDB)/ --exclude "*" $$(for db in $(BLAST_DATABASES); do echo --include "$$db*[!q]"; done)
 else

@@ -27,6 +27,7 @@ release:
 	git pull
 	@if [[ -z $$TAG ]]; then echo "Use release-{major,minor,patch}"; exit 1; fi
 	git clean -x --force $$(python setup.py --name)
+	$(MAKE) write-const
 	sed -i -e "s/version=\([\'\"]\)[0-9]*\.[0-9]*\.[0-9]*/version=\1$${TAG:1}/" setup.py
 	git add setup.py
 	TAG_MSG=$$(mktemp); \
