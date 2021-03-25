@@ -1,3 +1,8 @@
+Changes for v0.1.6 (2021-03-25)
+===============================
+
+Avoid github rate limit while polling
+
 Changes for v0.1.5 (2021-03-25)
 ===============================
 
