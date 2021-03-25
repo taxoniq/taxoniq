@@ -43,7 +43,7 @@ release:
 	echo "Waiting for release build to start..."
 	sleep 30
 	while http ${REPOS_API}/commits/${TAG}/check-runs | jq -e '.check_runs[] | select(.name|match("Build wheels"))|select(.conclusion != "success")' > /dev/null; do echo "Waiting for wheels to build..."; sleep 10; done
-	-rm -rf dist wheels.zip
+	-rm -rf build dist wheels.zip
 	http --download --follow --auth ${GH_AUTH} $$(http --auth ${GH_AUTH} $$(http --auth ${GH_AUTH} ${REPOS_API}/actions/artifacts | jq -r .artifacts[0].url) | jq -r .archive_download_url)
 	unzip -d dist wheels.zip
 	$(MAKE) release-pypi
@@ -67,6 +67,7 @@ release-db-packages:
 	git add setup.py db_packages/*/setup.py
 	git commit -m "Update data packages to version $$(cat latest-dir | cut -f 1-3 -d -)"
 	git push
+	-rm -rf db_packages/*/build db_packages/*/dist
 	for p in db_packages/*; do (cd $$p; python setup.py bdist_wheel); done
 	twine upload db_packages/*/dist/*.whl --verbose
 
