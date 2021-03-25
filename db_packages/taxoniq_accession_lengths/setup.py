@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="taxoniq-accession-lengths",
-    version="2021.3.9",
+    version="2021.3.23",
     url="https://github.com/chanzuckerberg/taxoniq",
     license="MIT License",
     author="Andrey Kislyuk",
