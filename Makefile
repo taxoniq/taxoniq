@@ -1,5 +1,6 @@
 BLAST_DB_S3_BUCKET=ncbi-blast-databases
 BLAST_DB_GS_BUCKET=blast-db
+TAXDUMP_URL=https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz
 
 ifndef BLASTDB
 $(error Please set BLASTDB)
@@ -16,9 +17,11 @@ build-vendored-deps:
 
 write-const:
 	echo "blast_db_timestamp = '$$(cat latest-dir)'" > taxoniq/const.py
+	echo "taxon_db_timestamp = '$$(stat --format %Y nodes.dmp)'" >> taxoniq/const.py
 
 build: build-vendored-deps
 	pip3 install --upgrade awscli zstandard urllib3 db_packages/*
+	if [[ ! -f nodes.dmp ]] || [[ $$(($$(date +%s) - $$(stat --format %Y nodes.dmp))) -gt $$((60*60*24)) ]]; then curl $(TAXDUMP_URL) | tar -xvz; fi
 	mkdir -p $(BLASTDB)
 	aws s3 cp --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/latest-dir .
 	$(MAKE) write-const

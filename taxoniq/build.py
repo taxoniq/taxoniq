@@ -227,10 +227,6 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
     if not blast_databases:
         blast_databases = [db.name for db in BLASTDatabase]
 
-    if not os.path.exists("nodes.dmp"):
-        cmd = "curl https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz | tar -xvz"
-        subprocess.run(cmd, shell=True)
-
     RecordTrie("I", load_wikidata()).save(os.path.join(destdir, 'wikidata.marisa'))
     write_taxid_to_string_index(mapping=load_wikidata(field="extract"), index_name="description", destdir=destdir)
     write_taxid_to_string_index(mapping=load_wikidata(field="en_wiki_title"), index_name="en_wiki_title",
