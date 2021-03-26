@@ -173,11 +173,11 @@ Because of their size, taxoniq wheels with indexes of the NT (GenBank Non-redund
 distributed on GitHub instead of PyPI. After running `pip3 install taxoniq`, you can install the NT indexes as follows:
 
 - Navigate to https://github.com/chanzuckerberg/taxoniq/releases/latest
-- For each "Python Wheel with NT index" asset:
+- In the "Assets" section, for each link that starts with "ncbi_genbank" and ends with ".whl":
   - Right-click on the asset link, and click "Copy link address"
   - Run `pip3 install --upgrade <PASTED LINK ADDRESS>`
 
-The NT index packages also contain indexes for the Refseq representative genomes and Betacoronavirus accessions (meaning
+The NT index packages also contain indexes for the RefSeq representative genomes and Betacoronavirus accessions (meaning
 they are are superset of the PyPI packages).
 
 ## Cookbook
