@@ -69,7 +69,7 @@ release-db-packages: check-release-deps
 	-rm -rf db_packages/*/build db_packages/*/dist
 	for p in db_packages/*; do (cd $$p; python setup.py bdist_wheel); done
 	twine upload db_packages/ncbi_taxon_db/dist/*.whl db_packages/ncbi_refseq_*/dist/*.whl --verbose
-	for whl in db_packages/ncbi_genbank_*/dist/*.whl; do http --check-status --auth ${GH_AUTH} POST ${UPLOADS_API}/$$(http --auth ${GH_AUTH} ${RELEASES_API}/latest | jq .id)/assets name==$$(basename $$whl) label=="Python Wheel" < $$whl
+	for whl in db_packages/ncbi_genbank_*/dist/*.whl; do http --check-status --auth ${GH_AUTH} POST ${UPLOADS_API}/$$(http --auth ${GH_AUTH} ${RELEASES_API}/latest | jq .id)/assets name==$$(basename $$whl) name=="$$(basename $$whl)" label=="$$(basename $$whl)" < $$whl; done
 
 release-pypi:
 	python setup.py sdist

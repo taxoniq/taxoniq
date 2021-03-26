@@ -10,6 +10,7 @@ setup(
     author="Andrey Kislyuk",
     author_email="akislyuk@chanzuckerberg.com",
     description="Taxoniq accession index for NCBI BLAST databases",
+    long_description="Taxoniq accession index for NCBI BLAST databases",
     packages=find_packages(),
     include_package_data=True
 )

@@ -15,6 +15,7 @@ setup(
     author="Andrey Kislyuk",
     author_email="akislyuk@chanzuckerberg.com",
     description="Taxoniq index for NCBI Taxonomy database",
+    long_description="Taxoniq index for NCBI Taxonomy database",
     packages=find_packages(),
     include_package_data=True
 )
