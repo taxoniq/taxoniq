@@ -1,3 +1,11 @@
+Changes for v0.2.0 (2021-03-26)
+===============================
+
+-  Refactor db package dependencies and release tooling to support
+   automated releases of RefSeq and Genbank indexes
+
+-  Update data packages to version 2021-03-25
+
 Changes for v0.1.7 (2021-03-25)
 ===============================
 
