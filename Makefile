@@ -30,7 +30,7 @@ ifdef BLAST_DATABASES
 else
 	aws s3 sync --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/$$(cat latest-dir)/ $(BLASTDB)/ --exclude "*.nsq" --exclude "*.p*" --exclude "env_*" --exclude "patnt*" --exclude "refseq_rna*"
 endif
-	python3 -c 'import logging; logging.basicConfig(level=logging.DEBUG); import taxoniq.build as tb; tb.build_trees()'
+	python3 -m taxoniq.build
 	if [[ $$CI ]]; then rm -rf $(BLASTDB); fi
 
 lint:

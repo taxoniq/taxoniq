@@ -413,6 +413,15 @@ def assembly_sort_key(assembly):
     sort_key.append(assembly[0]["seq_rel_date"])
     return sort_key
 
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
+    if "BLAST_DATABASES" in os.environ:
+        build_trees()
+    else:
+        build_trees(blast_databases=[db.name for db in BLASTDatabase if db.name not in {"nt", "nr"}])
+        build_trees(blast_databases=[db.name for db in BLASTDatabase])
+
 # TODO: load WoL tree distance information
 # TODO: load virus host and refseq data (Viruses_RefSeq_and_neighbors_genome_data.tab)
 # TODO: use blastdb-manifest.json
