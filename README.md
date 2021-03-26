@@ -30,6 +30,9 @@ as described in the **Cookbook** section below.
 
     pip3 install taxoniq
 
+Pre-built wheels are available for Python 3.5+ on Linux and MacOS. On MacOS 11 Big Sur, Pip 20.3+ is required to install
+pre-built wheels (you can check your version with `pip3 --version` and upgrade with `pip3 install --upgrade pip`).
+
 ## Synopsis
 
 ```python
