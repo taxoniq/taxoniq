@@ -53,4 +53,4 @@ clean:
 
 .PHONY: lint test docs install clean build build-vendored-deps write-const
 
-include common.mk
+include release.mk
