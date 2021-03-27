@@ -13,7 +13,7 @@ import zstandard
 import urllib3
 
 from . import Accession, BLASTDatabase, RecordTrie
-from .tax_dump_readers import NodesReader, TaxonomyNamesReader
+from .tax_dump_readers import NodesReader, TaxonomyNamesReader, HostReader
 
 logger = logging.getLogger(__name__)
 
@@ -220,6 +220,23 @@ def load_wikidata(field="wikidata_id"):
                 yield (record["taxid"], (int(record[field].lstrip("Q")), ) if field == "wikidata_id" else record[field])
 
 
+def load_hosts():
+    for row in HostReader():
+        yield row["tax_id"], row["potential_hosts"]
+
+
+def get_virus_genome_data():
+    virus_genome_data = []
+    virus_data_url = "https://ftp.ncbi.nlm.nih.gov/genomes/Viruses/Viruses_RefSeq_and_neighbors_genome_data.tab"
+    virus_data_fields = ("representative", "neighbor", "host", "selected_lineage", "taxonomy_name", "segment_name")
+    with open(fetch_file(virus_data_url)) as fh:
+        for line in fh:
+            if line.startswith("#"):
+                continue
+            virus_genome_data.append(dict(zip(virus_data_fields, line.strip().split("\t"))))
+    return virus_genome_data
+
+
 def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), destdir=None):
     logging.basicConfig(level=logging.INFO)
 
@@ -236,6 +253,7 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
     # TODO: pack all bit fields into one byte
     RecordTrie("IBBB", load_taxa()).save(os.path.join(destdir, 'taxa.marisa'))
     write_taxid_to_string_index(mapping=load_child_nodes(), index_name="child_nodes", destdir=destdir)
+    write_taxid_to_string_index(mapping=load_hosts(), index_name="host", destdir=destdir)
 
     taxid2refrep = defaultdict(list)
 

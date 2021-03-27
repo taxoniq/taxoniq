@@ -183,6 +183,22 @@ distributed on GitHub instead of PyPI. After running `pip3 install taxoniq`, you
 The NT index packages also contain indexes for the RefSeq representative genomes and Betacoronavirus accessions (meaning
 they are are superset of the PyPI packages).
 
+## Streaming CLI I/O
+The `taxoniq` command-line interface can take streaming input from stdin and produce streaming output on stdout. This
+allows the amortization of startup and index load time and efficient operation as part of shell pipelines.
+
+The following
+example shows the pipelined operation of [fastp](https://github.com/OpenGene/fastp),
+[kraken2](https://github.com/DerrickWood/kraken2/wiki), and taxoniq to annotate hits found in a Betacoronavirus sample:
+```
+in progress
+```
+<!--
+fastp --thread $KRAKEN2_NUM_THREADS --low_complexity_filter -i R1.fastq.gz -I R2.fastq.gz -o filtered.R1.fastq.gz -O filtered.R2.fastq.gz
+
+kraken2 --paired nohuman_1.fastq nohuman_2.fastq --classified-out 'classified#.fastq' | taxoniq
+-->
+
 ## Cookbook
 In progress
 

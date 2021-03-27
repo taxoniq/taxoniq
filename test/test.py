@@ -23,6 +23,7 @@ class TestTaxoniq(unittest.TestCase):
         self.assertEqual(t2, taxoniq.Taxon(scientific_name="Escherichia coli str. K-12 substr. MG1655"))
         self.assertEqual(t2.scientific_name, "Escherichia coli str. K-12 substr. MG1655")
         self.assertEqual(t2.parent.parent.common_name, "E. coli")
+        self.assertEqual(t2.host, ["bacteria", "vertebrates"])
         self.assertEqual(t2.ranked_lineage, [taxoniq.Taxon(562), taxoniq.Taxon(561), taxoniq.Taxon(543),
                                              taxoniq.Taxon(91347), taxoniq.Taxon(1236), taxoniq.Taxon(1224),
                                              taxoniq.Taxon(2)])

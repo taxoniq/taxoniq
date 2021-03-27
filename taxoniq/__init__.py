@@ -180,9 +180,8 @@ class Taxon(DatabaseService, ItemAttrAccess):
         "wikidata": (RecordTrie("I"), os.path.join(_db_dir, "wikidata.marisa")),
         "sn2t": (RecordTrie("I"), os.path.join(_db_dir, "sn2taxid.marisa")),
     }
-    _string_index_names = (
-        "scientific_name", "common_name", "taxid2refrep", "taxid2refseq", "description", "en_wiki_title", "child_nodes"
-    )
+    _string_index_names = ("scientific_name", "common_name", "taxid2refrep", "taxid2refseq", "description",
+                           "en_wiki_title", "child_nodes", "host")
     for string_index in _string_index_names:
         _db_files[string_index] = (zstandard, os.path.join(_db_dir, string_index + ".zstd"))
         _db_files[string_index + "_pos"] = (RecordTrie("I"), os.path.join(_db_dir, string_index + ".marisa"))
@@ -297,15 +296,26 @@ class Taxon(DatabaseService, ItemAttrAccess):
 
     @property
     def best_refseq_taxon(self):
-        # best related taxon with refseq representative genome sequence available
+        '''
+        Best related taxon with refseq representative genome sequence available.
+        For viruses, this is the RefSeq "genome neighbor" as defined in
+        https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4383986/ and retrieved from
+        https://ftp.ncbi.nlm.nih.gov/genomes/Viruses/Viruses_RefSeq_and_neighbors_genome_data.tab.
+        For other domains, this is the RefSeq representative genome for the taxon's species, if available, as
+        seen in the species_taxid column of https://ftp.ncbi.nlm.nih.gov/genomes/refseq/assembly_summary_refseq.txt.
+
+        The accessions for the genome can be accessed as follows:
+
+            Taxon(123).best_refseq_taxon.refseq_representative_genome_accessions
+        '''
         raise NotImplementedError()
 
     @property
-    def host(self) -> str:
+    def host(self) -> List[str]:
         '''
         A text description of a symbiont host or hosts for this taxon's organism, if any.
         '''
-        raise NotImplementedError()
+        return self._get_str_attr("host").split(",")
 
     @property
     def refseq_representative_genome_accessions(self) -> List[Accession]:
