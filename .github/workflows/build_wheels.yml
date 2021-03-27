@@ -7,9 +7,9 @@ on:
 
 env:
   BLASTDB: blast-db
-  CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_24_x86_64
-  CIBW_MANYLINUX_I686_IMAGE: quay.io/pypa/manylinux_2_24_i686
-  CIBW_MANYLINUX_AARCH64_IMAGE: quay.io/pypa/manylinux_2_24_aarch64
+  CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux2014_x86_64
+  CIBW_MANYLINUX_I686_IMAGE: quay.io/pypa/manylinux2014_i686
+  CIBW_MANYLINUX_AARCH64_IMAGE: quay.io/pypa/manylinux2014_aarch64
 
 jobs:
   build_wheels:
@@ -18,7 +18,7 @@ jobs:
     timeout-minutes: 20
     env:
       CIBW_SKIP: "cp27-* pp*"
-      CIBW_BEFORE_BUILD: "pip install cython"
+      CIBW_BEFORE_BUILD: "pip install cython && cython -3 marisa-trie/src/*.pyx marisa-trie/src/*.pxd --cplus"
     strategy:
       matrix:
         os: [ubuntu-20.04, macos-latest]
@@ -34,9 +34,7 @@ jobs:
       - name: Install build dependencies
         run: python -m pip install cibuildwheel==1.10.0 cython==0.29.22 wheel
       - name: Build wheels
-        run: |
-          make build-vendored-deps
-          python -m cibuildwheel --output-dir wheelhouse
+        run: python -m cibuildwheel --output-dir wheelhouse
       - uses: actions/upload-artifact@v2
         with:
           name: wheels-${{github.event.release.tag_name}}
