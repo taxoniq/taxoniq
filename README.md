@@ -211,8 +211,9 @@ In progress
 ## License
 Taxoniq software is licensed under the terms of the [MIT License](LICENSE).
 
-Distributions of this package contain data from the
-[National Center for Biotechnology Information](https://www.ncbi.nlm.nih.gov/) released into the public domain under the
+Distributions of this package contain data from
+[NCBI Taxonomy, NCBI GenBank, and NCBI RefSeq](https://www.ncbi.nlm.nih.gov/) (Bethesda (MD): National Library of
+Medicine (US), National Center for Biotechnology Information). These data are released into the public domain under the
 [NCBI Public Domain Notice](LICENSE.NCBI).
 
 Distributions of this package contain text excerpts from Wikipedia licensed under the terms of the
