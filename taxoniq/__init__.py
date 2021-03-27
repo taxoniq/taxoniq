@@ -62,7 +62,8 @@ class ItemAttrAccess:
 
 class Accession(DatabaseService, ItemAttrAccess):
     """
-    FIXME: add docstring
+    An object representing an NCBI RefSeq or GenBank nucleotide or protein sequence accession.
+    This is used by Taxoniq to represent sequences associated with taxons; use :class:`Taxon` as the starting point.
     """
     _db_files = {
         "accessions": (RecordTrie("IH"), accession_db.db),

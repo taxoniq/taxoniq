@@ -1,5 +1,11 @@
 .. mdinclude:: ../README.md
 
+API documentation
+=================
+
+.. automodule:: taxoniq
+   :members:
+
 Change log
 ==========
 
