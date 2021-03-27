@@ -1,4 +1,4 @@
-.. include:: ../README.md
+.. mdinclude:: ../README.md
 
 Change log
 ==========

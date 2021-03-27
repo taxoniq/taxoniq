@@ -40,6 +40,7 @@ test:
 	python3 -m unittest discover --start-directory test --top-level-directory . --verbose
 
 docs:
+	pip3 install sphinx guzzle_sphinx_theme m2r
 	sphinx-build docs docs/html
 
 install: clean version build

@@ -50,8 +50,7 @@ release: check-release-deps
 	http --download --follow --auth ${GH_AUTH} $$(http --auth ${GH_AUTH} $$(http --auth ${GH_AUTH} ${REPOS_API}/actions/artifacts | jq -r .artifacts[0].url) | jq -r .archive_download_url)
 	unzip -d dist wheels-${TAG}.zip
 	$(MAKE) release-pypi
-# FIXME: re-enable after testing
-#	$(MAKE) release-docs
+	$(MAKE) release-docs
 
 release-db-packages: check-release-deps
 	$(eval REMOTE=$(shell git remote get-url origin | perl -ne '/([^\/\:]+\/.+?)(\.git)?$$/; print $$1'))
