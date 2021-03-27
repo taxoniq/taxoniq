@@ -62,7 +62,7 @@ class ItemAttrAccess:
 
 class Accession(DatabaseService, ItemAttrAccess):
     """
-    An object representing an NCBI RefSeq or GenBank nucleotide or protein sequence accession.
+    An object representing an NCBI GenBank nucleotide or protein sequence accession ID.
     This is used by Taxoniq to represent sequences associated with taxons; use :class:`Taxon` as the starting point.
     """
     _db_files = {
@@ -86,30 +86,45 @@ class Accession(DatabaseService, ItemAttrAccess):
 
     @property
     def tax_id(self):
+        """
+        The taxon ID associated with this sequence accession ID.
+        """
         if self._tax_id is None:
             self._load_accession_data()
         return self._tax_id
 
     @property
     def blast_db(self):
+        """
+        The BLAST database in which this sequence accession ID was indexed.
+        """
         if self._blast_db is None:
             self._load_accession_data()
         return self._blast_db
 
     @property
     def blast_db_volume(self):
+        """
+        The numeric BLAST database volume ID in which this sequence accession was indexed.
+        """
         if self._blast_db_volume is None:
             self._load_accession_data()
         return self._blast_db_volume
 
     @property
     def length(self):
+        """
+        The length of the sequence (number of nucleotides or amino acids).
+        """
         if self._length is None:
             self._length = self._get_db("accession_lengths")[self._packed_id][0][0]
         return self._length
 
     @property
     def db_offset(self):
+        """
+        The byte offset in the BLAST database volume at which this sequence starts.
+        """
         if self._db_offset is None:
             self._db_offset = self._get_db("accession_offsets")[self._packed_id][0][0]
         return self._db_offset
@@ -133,10 +148,17 @@ class Accession(DatabaseService, ItemAttrAccess):
         return res
 
     def get_from_gs(self):
+        """
+        Returns a file-like object streaming the nucleotide sequence for this accession from the Google Storage NCBI
+        BLAST database mirror (https://registry.opendata.aws/ncbi-blast-databases/), if available.
+        """
         raise NotImplementedError()
 
     def url(self):
-        raise NotImplementedError()
+        """
+        Returns the HTTPS URL for the NCBI GenBank web page representing this sequence accession ID.
+        """
+        return f"https://www.ncbi.nlm.nih.gov/nuccore/{self.accession_id}"
 
     def __eq__(self, other):
         return self.accession_id == other.accession_id
@@ -192,6 +214,9 @@ class Taxon(DatabaseService, ItemAttrAccess):
 
     @property
     def scientific_name(self) -> str:
+        """
+        The unique scientific name of the taxon.
+        """
         return self._get_str_attr("scientific_name")
 
     @property
@@ -205,6 +230,9 @@ class Taxon(DatabaseService, ItemAttrAccess):
 
     @property
     def lineage(self) -> 'List[Taxon]':
+        """
+        Lineage for this taxon (the list of parent nodes from the taxon to the root of the taxonomic tree).
+        """
         lineage = [self]
         while lineage[-1].tax_id != 1:
             lineage.append(Taxon(lineage[-1]._parent))
@@ -212,13 +240,18 @@ class Taxon(DatabaseService, ItemAttrAccess):
 
     @property
     def ranked_lineage(self) -> 'List[Taxon]':
-        '''
-        Lineage of main taxonomic ranks (species, genus, family, order, class, phylum, kingdom, superkingdom)
-        '''
+        """
+        Lineage of main taxonomic ranks (species, genus, family, order, class, phylum, kingdom, superkingdom).
+        """
         return list(filter(lambda t: t.rank in self.common_ranks, self.lineage))
 
     @property
     def parent(self) -> 'Union[Taxon, None]':
+        """
+        The parent taxon for this taxon.
+
+        For the root of the tree, `parent` is `None`.
+        """
         if self.tax_id == 0:
             return None
         else:
@@ -226,20 +259,23 @@ class Taxon(DatabaseService, ItemAttrAccess):
 
     @property
     def child_nodes(self) -> 'List[Taxon]':
+        """
+        Returns a list of taxon objects that list this taxon as their parent.
+        """
         return [Taxon(int(t)) for t in self._get_str_attr("child_nodes").split(",")]
 
     @property
     def ranked_child_nodes(self) -> 'List[Taxon]':
         '''
         List of child nodes in the next main taxonomic rank (species, genus, family, order, class, phylum, kingdom,
-        superkingdom)
+        superkingdom).
         '''
         return list(filter(lambda t: t.rank in self.common_ranks, self.child_nodes))
 
     @property
     def description(self) -> str:
         '''
-        Introductory paragraph for this taxon from English Wikipedia, if available
+        Introductory paragraph for this taxon from English Wikipedia, if available.
         '''
         try:
             return self._get_str_attr("description")
@@ -250,7 +286,7 @@ class Taxon(DatabaseService, ItemAttrAccess):
     def best_available_description(self):
         '''
         Introductory paragraph from English Wikipedia for this taxon or the first parent taxon where a description is
-        available
+        available.
         '''
         t = self
         while t.tax_id != 1:
@@ -273,14 +309,25 @@ class Taxon(DatabaseService, ItemAttrAccess):
 
     @property
     def refseq_representative_genome_accessions(self) -> List[Accession]:
+        """
+        A list of :class:`Accession` objects for sequences in the RefSeq representative genome assembly for this
+        taxon, if available.
+        """
         return [Accession(i) for i in self._get_str_attr("taxid2refrep").split(",")]
 
     @property
     def refseq_genome_accessions(self) -> List[Accession]:
+        """
+        A list of :class:`Accession` objects for sequences in the most recent RefSeq genome assembly for this
+        taxon, if available.
+        """
         return [Accession(i) for i in self._get_str_attr("taxid2refseq").split(",")]
 
     @classmethod
     def lca(cls, taxa):
+        """
+        Given a list of Taxon objects, returns the last common ancestor taxon.
+        """
         raise NotImplementedError()
 
     @classmethod
@@ -298,20 +345,23 @@ class Taxon(DatabaseService, ItemAttrAccess):
 
     @property
     def url(self):
-        '''
-        URL of the NCBI Taxonomy web page for this taxon
-        '''
+        """
+        Returns the HTTPS URL for the NCBI Taxonomy web page representing this taxon.
+        """
         return f"https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id={self.tax_id}"
 
     @property
     def wikidata_id(self):
+        """
+        Wikidata ID for this taxon.
+        """
         wikidata_id = self._get_db("wikidata")[str(self.tax_id)][0][0]
         return f"Q{wikidata_id}"
 
     @property
     def wikidata_url(self):
         '''
-        URL of the Wikidata web page for this taxon
+        URL of the Wikidata web page representing this taxon.
         '''
         if self.wikidata_id:
             return f"https://www.wikidata.org/wiki/{self.wikidata_id}"
