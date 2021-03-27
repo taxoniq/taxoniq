@@ -1,3 +1,10 @@
+Changes for v0.3.0 (2021-03-27)
+===============================
+
+-  Use manylinux 2014 instead of 2.24 to build wheels
+
+-  Documentation improvements
+
 Changes for v0.2.0 (2021-03-26)
 ===============================
 
