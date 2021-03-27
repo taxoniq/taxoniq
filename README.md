@@ -12,7 +12,8 @@ Taxoniq's features include:
   (separately, Taxoniq can fetch the nucleotide or protein sequences over the network given a taxon or accession - see
   **Retrieving sequences** below)
 - A CLI capable of JSON I/O, batch processing and streaming of inputs for ease of use and pipelining in shell scripts
-- A stable, well-documented, type-hinted Python API (Python 3.6 and higher is supported)
+- A stable, [well-documented](https://chanzuckerberg.github.io/taxoniq/#module-taxoniq), type-hinted Python API
+  (Python 3.6 and higher is supported)
 - Comprehensive testing and continuous integration
 - An intuitive interface with useful defaults
 - Compactness, readability, and extensibility
@@ -24,7 +25,8 @@ the [WoL](https://biocore.github.io/wol/) kingdom-wide phylogenomic distance dat
 other databases. Accessions which appear in the NCBI RefSeq BLAST databases are indexed so that
 given a taxon ID, accession ID, or taxon name, you can quickly retrieve the taxon's rank, lineage, description,
 citations, representative RefSeq IDs, LCA information, evolutionary distance, sequence (with a network call), and more,
-as described in the **Cookbook** section below.
+as described in the **Cookbook** section below. Full [API documentation](https://chanzuckerberg.github.io/taxoniq/#module-taxoniq)
+is available.
 
 ## Installation
 
