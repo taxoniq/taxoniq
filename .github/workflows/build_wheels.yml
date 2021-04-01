@@ -35,10 +35,10 @@ jobs:
       - name: Install build dependencies
         run: python -m pip install cibuildwheel==1.10.0 cython==0.29.22 wheel
       - name: Set wheel architectures (Linux)
-        if: ${{ matrix.os == "ubuntu-20.04" }}
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
         run: export CIBW_ARCHS="x86_64 aarch64"
       - name: Set wheel architectures (MacOS)
-        if: ${{ matrix.os == "macos-latest" }}
+        if: ${{ matrix.os == 'macos-latest' }}
         run: export CIBW_ARCHS="x86_64 arm64"
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
