@@ -1,3 +1,10 @@
+Changes for v0.3.1 (2021-04-01)
+===============================
+
+-  Expose get_from_s3 via CLI
+
+-  Documentation improvements
+
 Changes for v0.3.0 (2021-03-27)
 ===============================
 
