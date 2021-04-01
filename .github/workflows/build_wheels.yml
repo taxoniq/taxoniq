@@ -18,6 +18,7 @@ jobs:
     timeout-minutes: 20
     env:
       CIBW_SKIP: "cp27-* pp*"
+      CIBW_ARCHS: "x86_64 aarch64 arm64"
       CIBW_BEFORE_BUILD: "pip install cython && cython -3 marisa-trie/src/*.pyx marisa-trie/src/*.pxd --cplus"
     strategy:
       matrix:
