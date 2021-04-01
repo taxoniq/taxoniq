@@ -122,7 +122,14 @@ Given an accession ID, Taxoniq can issue a single HTTP request and return a file
 sequence for this accession from the S3 or GS mirror as follows:
 ```python
 with taxoniq.Accession("NC_000913.3").get_from_s3() as fh:
-     fh.read()
+    fh.read()
+```
+For brevity, you can use [urllib3.response.HTTPResponse.stream](https://urllib3.readthedocs.io/en/latest/advanced-usage.html)
+instead of `read(...)` to avoid holding the entire sequence in memory:
+```python
+with taxoniq.Accession("NC_000913.3").get_from_s3() as fh:
+    for chunk in fh.stream():
+        sys.stdout.buffer.write(chunk)
 ```
 
 To retrieve many sequences quickly, you may want to use a threadpool to open multiple network connections at once:
@@ -136,6 +143,7 @@ taxon = taxoniq.Taxon(scientific_name="Apis mellifera")
 for accession, seq in ThreadPoolExecutor().map(fetch_seq, taxon.refseq_representative_genome_accessions):
     print(accession, len(seq))
 ```
+This operation is also available in the CLI, as described below.
 
 ## Command-line interface
 `pip3 install taxoniq` installs a command-line utility, `taxoniq`, which can be used to perform many of the same
@@ -172,6 +180,13 @@ functions provided by the Python API:
 ]
 ```
 See `taxoniq --help` for full details.
+#### Retrieving sequences using the CLI
+To retrieve an individual sequence in FASTA format given an accession ID, use `taxoniq get_from_s3 --accession-id ACCESSION_ID`.
+
+To retrieve multiple sequences in FASTA format, use `--accession-id -` and pass the IDs on standard input, one per line:
+```
+taxoniq refseq_representative_genome_accessions --scientific-name="Apis mellifera" | jq -r .[] | taxoniq get_from_s3 --accession-id -
+```
 
 ## Using the nr/nt databases
 Because of their size, taxoniq wheels with indexes of the NT (GenBank Non-redundant nucleotide) BLAST database are
