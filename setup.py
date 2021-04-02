@@ -21,7 +21,7 @@ MARISA_FILES[:] = itertools.chain(
 
 setup(
     name="taxoniq",
-    version="0.3.4",
+    version="0.4.0",
     url="https://github.com/chanzuckerberg/taxoniq",
     project_urls={
         "Documentation": "https://chanzuckerberg.github.io/taxoniq",
