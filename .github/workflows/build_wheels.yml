@@ -17,7 +17,7 @@ jobs:
   build_wheels:
     name: Build wheels on ${{matrix.os}}
     runs-on: ${{matrix.os}}
-    timeout-minutes: 20
+    timeout-minutes: 30
     env:
       CIBW_SKIP: "cp27-* pp*"
       CIBW_ARCHS_MACOS: "x86_64 arm64"
