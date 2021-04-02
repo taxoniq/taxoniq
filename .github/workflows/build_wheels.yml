@@ -2,6 +2,7 @@ name: Build wheels
 
 on:
   push
+
 #  release:
 #    types:
 #      - created
