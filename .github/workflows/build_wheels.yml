@@ -1,11 +1,9 @@
 name: Build wheels
 
 on:
-  push
-
-#  release:
-#    types:
-#      - created
+  release:
+    types:
+      - created
 
 env:
   BLASTDB: blast-db
