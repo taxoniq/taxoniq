@@ -200,7 +200,7 @@ class Taxon(DatabaseService, ItemAttrAccess):
         elif scientific_name is not None:
             self.tax_id = self._get_db("sn2t")[scientific_name][0][0]
         self._parent, rank, self.division_id, self.specified_species = self._get_db("taxa")[str(self.tax_id)][0]
-        self.rank = Rank(rank)
+        self._rank = Rank(rank)
         self._str_attr_cache = {}
 
     def _get_str_attr(self, attr_name):
@@ -210,6 +210,13 @@ class Taxon(DatabaseService, ItemAttrAccess):
             pos = pos_db[str(self.tax_id)][0][0]
             self._str_attr_cache[attr_name] = str_db[pos:str_db.index(b"\n", pos)].decode()
         return self._str_attr_cache[attr_name]
+
+    @property
+    def rank(self) -> Rank:
+        """
+        Rank of the taxon. See https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7408187/#sec9title for more details.
+        """
+        return self._rank
 
     @property
     def scientific_name(self) -> str:
