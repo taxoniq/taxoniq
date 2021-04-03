@@ -9,8 +9,8 @@ Taxoniq's features include:
 
 - Pre-computed indexes updated monthly from NCBI, [WoL](https://biocore.github.io/wol/) and cross-referenced databases
 - Offline operation: all indexes are bundled with the package; no network calls are made when querying taxon information
-  (separately, Taxoniq can fetch the nucleotide or protein sequences over the network given a taxon or accession - see
-  **Retrieving sequences** below)
+  (separately, Taxoniq can fetch the nucleotide or protein sequences over the network given a taxon or sequence
+  accession ID - see **Retrieving sequences** below)
 - A CLI capable of JSON I/O, batch processing and streaming of inputs for ease of use and pipelining in shell scripts
 - A stable, [well-documented](https://chanzuckerberg.github.io/taxoniq/#module-taxoniq), type-hinted Python API
   (Python 3.6 and higher is supported)
@@ -20,10 +20,10 @@ Taxoniq's features include:
 
 The Taxoniq package bundles an indexed, compressed copy of the
 [NCBI taxonomy database files](https://ncbiinsights.ncbi.nlm.nih.gov/2018/02/22/new-taxonomy-files-available-with-lineage-type-and-host-information/),
-the [NCBI RefSeq](https://www.ncbi.nlm.nih.gov/refseq/) nucleotide and protein accessions associated with each taxon,
-the [WoL](https://biocore.github.io/wol/) kingdom-wide phylogenomic distance database, and relevant information from
-other databases. Accessions which appear in the NCBI RefSeq BLAST databases are indexed so that
-given a taxon ID, accession ID, or taxon name, you can quickly retrieve the taxon's rank, lineage, description,
+the [NCBI RefSeq](https://www.ncbi.nlm.nih.gov/refseq/) nucleotide and protein sequence accession IDs associated with
+each taxon, the [WoL](https://biocore.github.io/wol/) kingdom-wide phylogenomic distance database, and relevant
+information from other databases. Sequence accession IDs which appear in the NCBI RefSeq BLAST databases are indexed so
+that given a taxon ID, accession ID, or taxon name, you can quickly retrieve the taxon's rank, lineage, description,
 citations, representative RefSeq IDs, LCA information, evolutionary distance, sequence (with a network call), and more,
 as described in the **Cookbook** section below. Full [API documentation](https://chanzuckerberg.github.io/taxoniq/#module-taxoniq)
 is available.
@@ -110,8 +110,8 @@ Mirrors of the NCBI BLAST databases are maintained on [AWS S3](https://registry.
 superior bandwidth and throughput compared to the NCBI FTP server, so range requests can be used to retrieve individual
 sequences from the database files without downloading and keeping a copy of the whole database.
 
-The Taxoniq PyPI distribution (the package you install using `pip3 install taxoniq`) indexes accessions for the
-following NCBI BLAST databases:
+The Taxoniq PyPI distribution (the package you install using `pip3 install taxoniq`) indexes sequence accession IDs for
+the following NCBI BLAST databases:
 
 - Refseq viruses representative genomes (`ref_viruses_rep_genomes`) (nucleotide)
 - Refseq prokaryote representative genomes (contains refseq assembly) (`ref_prok_rep_genomes`) (nucleotide)
@@ -119,7 +119,7 @@ following NCBI BLAST databases:
 - Betacoronavirus (nucleotide)
 
 Given an accession ID, Taxoniq can issue a single HTTP request and return a file-like object streaming the nucleotide
-sequence for this accession from the S3 or GS mirror as follows:
+sequence from the S3 or GS mirror as follows:
 ```python
 with taxoniq.Accession("NC_000913.3").get_from_s3() as fh:
     fh.read()
