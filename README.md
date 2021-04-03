@@ -184,9 +184,7 @@ See `taxoniq --help` for full details.
 To retrieve an individual sequence in FASTA format given an accession ID, use `taxoniq get_from_s3 --accession-id ACCESSION_ID`.
 
 To retrieve multiple sequences in FASTA format, use `--accession-id -` and pass the IDs on standard input, one per line:
-```
-taxoniq refseq_representative_genome_accessions --scientific-name="Apis mellifera" | jq -r .[] | taxoniq get_from_s3 --accession-id -
-```
+`taxoniq refseq_representative_genome_accessions --scientific-name="Apis mellifera" | jq -r .[] | taxoniq get_from_s3 --accession-id -`.
 
 ## Using the nr/nt databases
 Because of their size, taxoniq wheels with indexes of the NT (GenBank Non-redundant nucleotide) BLAST database are
