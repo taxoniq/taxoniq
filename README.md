@@ -222,6 +222,8 @@ In progress
 * [Documentation](https://chanzuckerberg.github.io/taxoniq/)
 * [Package distribution (PyPI)](https://pypi.python.org/pypi/taxoniq)
 * [Change log](https://github.com/chanzuckerberg/taxoniq/blob/master/Changes.rst)
+* [ETE Toolkit](http://etetoolkit.org/) and the [ETE Tutorial](http://etetoolkit.org/docs/latest/tutorial/index.html) - a general purpose
+  phylogenetic tree toolkit with a rich Python interface
 
 ## License
 Taxoniq software is licensed under the terms of the [MIT License](LICENSE).
