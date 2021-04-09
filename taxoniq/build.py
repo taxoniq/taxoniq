@@ -290,6 +290,10 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
     write_taxid_to_string_index(mapping=[(tid, ",".join(acc)) for tid, acc in taxid2refrep.items()],
                                 index_name="taxid2refrep", destdir=destdir)
 
+    # FIXME: write source timestamps to db packages
+    # "db_timestamp = '$$(cat latest-dir)'" > db_packages/ncbi_refseq_accession_db/ncbi_refseq_accession_db/const.py
+    # "db_timestamp = '$$(stat --format %Y nodes.dmp)'" > db_packages/ncbi_taxon_db/ncbi_taxon_db/const.py
+
     # FIXME: if we include non-rep refseq accessions, we should index those accessions' positions in nt
     taxid2refseq = index_refseq_accessions(destdir=destdir)
     write_taxid_to_string_index(mapping=taxid2refseq.items(), index_name="taxid2refseq", destdir=destdir)

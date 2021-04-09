@@ -149,7 +149,7 @@ This operation is also available in the CLI, as described below.
 `pip3 install taxoniq` installs a command-line utility, `taxoniq`, which can be used to perform many of the same
 functions provided by the Python API:
 ```
->taxoniq child_nodes --taxon-id 2 --output-format '{tax_id}: {scientific_name}'
+>taxoniq child-nodes --taxon-id 2 --output-format '{tax_id}: {scientific_name}'
 [
     "1224: Proteobacteria",
     "2323: Bacteria incertae sedis",
@@ -181,10 +181,10 @@ functions provided by the Python API:
 ```
 See `taxoniq --help` for full details.
 #### Retrieving sequences using the CLI
-To retrieve an individual sequence in FASTA format given an accession ID, use `taxoniq get_from_s3 --accession-id ACCESSION_ID`.
+To retrieve an individual sequence in FASTA format given an accession ID, use `taxoniq get-from-s3 --accession-id ACCESSION_ID`.
 
 To retrieve multiple sequences in FASTA format, use `--accession-id -` and pass the IDs on standard input, one per line:
-`taxoniq refseq_representative_genome_accessions --scientific-name="Apis mellifera" | jq -r .[] | taxoniq get_from_s3 --accession-id -`.
+`taxoniq refseq-representative-genome-accessions --scientific-name="Apis mellifera" | jq -r .[] | taxoniq get-from-s3 --accession-id -`.
 
 ## Using the nr/nt databases
 Because of their size, taxoniq wheels with indexes of the NT (GenBank Non-redundant nucleotide) BLAST database are

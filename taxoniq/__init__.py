@@ -4,7 +4,6 @@ from enum import Enum
 
 import urllib3
 import zstandard
-from .vendored.marisa_trie import RecordTrie
 
 import ncbi_taxon_db
 
@@ -23,6 +22,8 @@ except ImportError:
 
 from .const import blast_db_timestamp
 from .util import TwoBitDecoder
+from .version import __version__  # noqa
+from .vendored.marisa_trie import RecordTrie
 
 Rank = Enum(
     "Rank",
@@ -186,9 +187,9 @@ class Taxon(DatabaseService, ItemAttrAccess):
     }
     _string_index_names = ("scientific_name", "common_name", "taxid2refrep", "taxid2refseq", "description",
                            "en_wiki_title", "child_nodes", "host")
-    for string_index in _string_index_names:
-        _db_files[string_index] = (zstandard, os.path.join(_db_dir, string_index + ".zstd"))
-        _db_files[string_index + "_pos"] = (RecordTrie("I"), os.path.join(_db_dir, string_index + ".marisa"))
+    for _string_index in _string_index_names:
+        _db_files[_string_index] = (zstandard, os.path.join(_db_dir, _string_index + ".zstd"))
+        _db_files[_string_index + "_pos"] = (RecordTrie("I"), os.path.join(_db_dir, _string_index + ".marisa"))
 
     common_ranks = {
         Rank[i] for i in ("species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom")

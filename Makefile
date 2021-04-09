@@ -15,16 +15,11 @@ build-vendored-deps:
 	python3 setup.py build_clib
 	python3 setup.py build_ext --inplace
 
-write-const:
-	echo "blast_db_timestamp = '$$(cat latest-dir)'" > taxoniq/const.py
-	echo "taxon_db_timestamp = '$$(stat --format %Y nodes.dmp)'" >> taxoniq/const.py
-
 build: version build-vendored-deps
 	pip3 install --upgrade awscli zstandard urllib3 db_packages/ncbi_taxon_db db_packages/ncbi_refseq_accession_*
 	if [[ ! -f nodes.dmp ]] || [[ $$(($$(date +%s) - $$(stat --format %Y nodes.dmp))) -gt $$((60*60*24)) ]]; then curl $(TAXDUMP_URL) | tar -xvz; fi
 	mkdir -p $(BLASTDB)
 	aws s3 cp --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/latest-dir .
-	$(MAKE) write-const
 ifdef BLAST_DATABASES
 	aws s3 sync --quiet --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/$$(cat latest-dir)/ $(BLASTDB)/ --exclude "*" $$(for db in $(BLAST_DATABASES); do echo --include "$$db*[!q]"; done)
 else
@@ -52,6 +47,6 @@ clean:
 	-rm -rf *.egg-info
 	-rm -rf db_packages/*/*/*.{zstd,marisa}
 
-.PHONY: lint test docs install clean build build-vendored-deps write-const
+.PHONY: lint test docs install clean build build-vendored-deps
 
 include release.mk
