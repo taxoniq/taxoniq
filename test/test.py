@@ -28,6 +28,11 @@ class TestTaxoniq(unittest.TestCase):
                                              taxoniq.Taxon(91347), taxoniq.Taxon(1236), taxoniq.Taxon(1224),
                                              taxoniq.Taxon(2)])
 
+    def test_unset_attribute(self):
+        self.assertEqual(taxoniq.Taxon(123).scientific_name, "Pirellula")
+        with self.assertRaisesRegex(taxoniq.NoValue, "The taxon .* has no value indexed for"):
+            taxoniq.Taxon(123).common_name
+
     @unittest.skipIf("CI" in os.environ, "Skippinng test that requires eukaryotic database")
     def test_eukaryote_taxon_interface(self):
         t = taxoniq.Taxon(accession_id="NC_000001.11")

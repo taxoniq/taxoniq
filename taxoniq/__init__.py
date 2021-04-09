@@ -41,6 +41,10 @@ class TaxoniqException(Exception):
     pass
 
 
+class NoValue(TaxoniqException):
+    pass
+
+
 class DatabaseService:
     _databases = {}
 
@@ -207,7 +211,10 @@ class Taxon(DatabaseService, ItemAttrAccess):
         if attr_name not in self._str_attr_cache:
             pos_db = self._get_db(attr_name + "_pos")
             str_db = self._get_db(attr_name)
-            pos = pos_db[str(self.tax_id)][0][0]
+            try:
+                pos = pos_db[str(self.tax_id)][0][0]
+            except KeyError:
+                raise NoValue(f'The taxon {self} has no value indexed for "{attr_name}"')
             self._str_attr_cache[attr_name] = str_db[pos:str_db.index(b"\n", pos)].decode()
         return self._str_attr_cache[attr_name]
 
