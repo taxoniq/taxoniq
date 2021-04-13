@@ -1,3 +1,10 @@
+Changes for v0.5.0 (2021-04-13)
+===============================
+
+-  CLI usability improvements: raise custom error when no value is found
+
+-  Documentation improvements
+
 Changes for v0.4.0 (2021-04-02)
 ===============================
 
