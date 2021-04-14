@@ -59,8 +59,10 @@ class TestTaxoniq(unittest.TestCase):
         self.assertEqual(a.tax_id, 511145)
         with a.get_from_s3() as fh:
             seq = fh.read()
-            assert seq.startswith(b"AGCTTTTCATTCTGACTGCAACGGGCAATATGTCTCTGTGTGGATTAAAAAAAGAGTGTCTGATAGCAGCT")
-            assert seq.endswith(b"AATGTTGCACCGTTTGCTGCATGATATTGAAAAAAATATCACCAAATAAAAAACGCCTTAGTAAGTATTTTTC")
+            assert seq.startswith(b"AGCTTTTCATTCTGACTGCAACGGGCAATATGTCTCTGTGTGGATTAAAAAAAGAGTGTCTGATAGCAGCT"), \
+                f"Unexpected sequence start {seq[:64]}"
+            assert seq.endswith(b"AATGTTGCACCGTTTGCTGCATGATATTGAAAAAAATATCACCAAATAAAAAACGCCTTAGTAAGTATTTTTC"), \
+                f"Unexpected sequence end {seq[-64:]}"
             self.assertEqual(fh.read(), b"")
         with a.get_from_s3() as fh:
             self.assertEqual(fh.read(1), b"AGCT")
