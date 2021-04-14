@@ -78,9 +78,13 @@ def cli(args=None):
             raise argparse.ArgumentError(None, "This operation requires an accession ID.")
         if args.accession_id == "-":
             def fetch_seq(accession_id):
-                accession = Accession(accession_id)
-                op = getattr(accession, args.operation.replace("-", "_"))
-                seq = op().read()
+                try:
+                    accession = Accession(accession_id)
+                    op = getattr(accession, args.operation.replace("-", "_"))
+                    seq = op().read()
+                except KeyError:
+                    args.accession_id = accession_id
+                    exit_not_found_err(args)
                 return (accession, seq)
 
             with ThreadPoolExecutor() as executor:
@@ -91,19 +95,18 @@ def cli(args=None):
                         sys.stdout.buffer.write(seq[line_start:line_start+64])
                         sys.stdout.buffer.write(b"\n")
         else:
-            try:
-                accession = Accession(args.accession_id)
-            except KeyError:
-                print("Accession ID {args.accession_id} not found (index version {})", file=sys.stderr)
-                exit(4)
+            accession = Accession(args.accession_id)
             operation = getattr(accession, args.operation.replace("-", "_"))
-            print(">" + accession.accession_id)
-            sys.stdout.flush()
-            with operation() as fh:
-                for chunk in fh.stream():
-                    for line_start in range(0, len(chunk), 64):
-                        sys.stdout.buffer.write(chunk[line_start:line_start+64])
-                        sys.stdout.buffer.write(b"\n")
+            try:
+                with operation() as fh:
+                    print(">" + accession.accession_id)
+                    sys.stdout.flush()
+                    for chunk in fh.stream():
+                        for line_start in range(0, len(chunk), 64):
+                            sys.stdout.buffer.write(chunk[line_start:line_start+64])
+                            sys.stdout.buffer.write(b"\n")
+            except KeyError:
+                exit_not_found_err(args)
     else:
         try:
             taxon = Taxon(tax_id=args.taxon_id, accession_id=args.accession_id, scientific_name=args.scientific_name)
