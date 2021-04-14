@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import json
 import unittest
 import logging
 from concurrent.futures import ThreadPoolExecutor
+from io import StringIO
+from unittest.mock import patch
 
 import taxoniq
 import taxoniq.cli
@@ -92,6 +95,9 @@ class TestTaxoniq(unittest.TestCase):
                 doc = json.loads(line)
                 for key in "taxid", "wikidata_id", "en_wiki_title", "extract":
                     self.assertIn(key, doc)
+
+    def test_cli(self):
+        taxoniq.cli.cli(["ranked-lineage", "--accession-id", "NC_000913.3"])
 
 
 if __name__ == "__main__":

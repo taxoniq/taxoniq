@@ -23,7 +23,7 @@ def print_json(data, output_format):
         if output_format:
             return output_format.format_map(i)
         if isinstance(i, Taxon):
-            return i.taxon_id
+            return i.tax_id
         if isinstance(i, Accession):
             return i.accession_id
         return repr(i)
@@ -47,7 +47,7 @@ parser = argparse.ArgumentParser(prog="taxoniq", description=__doc__, formatter_
 parser.add_argument("--version", action="version", version=get_version())
 parser.add_argument(
     "operation",
-    choices=[attr.replace("_", "-") for attr in dir(Taxon) if not attr.startswith("_")] + ["get_from_s3", "get_from_gs"]
+    choices=[attr.replace("_", "-") for attr in dir(Taxon) if not attr.startswith("_")] + ["get-from-s3", "get-from-gs"]
 )
 parser.add_argument("--taxon-id", help="Numeric NCBI taxon ID")
 parser.add_argument("--accession-id", help="Alphanumeric NCBI sequence accession ID")
@@ -67,8 +67,8 @@ def exit_not_found_err(args):
     exit(4)
 
 
-def cli():
-    args = parser.parse_args()
+def cli(args=None):
+    args = parser.parse_args(args)
     logging.basicConfig(level=logging.INFO)
 
     if sum([int(bool(i)) for i in (args.taxon_id, args.accession_id, args.scientific_name)]) != 1:
