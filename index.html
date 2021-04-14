@@ -1,0 +1,644 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <!-- Licensed under the Apache 2.0 License -->
+  <link rel="stylesheet" type="text/css" href="_static/fonts/open-sans/stylesheet.css" />
+  <!-- Licensed under the SIL Open Font License -->
+  <link rel="stylesheet" type="text/css" href="_static/fonts/source-serif-pro/source-serif-pro.css" />
+  <link rel="stylesheet" type="text/css" href="_static/css/bootstrap.min.css" />
+  <link rel="stylesheet" type="text/css" href="_static/css/bootstrap-theme.min.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+    <title>Taxoniq: Taxon Information Query - fast, offline querying of NCBI Taxonomy and related data &#8212; taxoniq  documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/guzzle.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Release Notes" href="changelog.html" />
+  
+   
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="changelog.html" title="Release Notes"
+             accesskey="N">next</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">taxoniq  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Taxoniq: Taxon Information Query - fast, offline querying of NCBI Taxonomy and related data</a></li> 
+      </ul>
+    </div>
+    <div class="container-wrapper">
+
+      <div id="mobile-toggle">
+        <a href="#"><span class="glyphicon glyphicon-align-justify" aria-hidden="true"></span></a>
+      </div>
+  <div id="left-column">
+    <div class="sphinxsidebar"><a href="
+    #" class="text-logo">taxoniq</a>
+<div class="sidebar-block">
+  <div class="sidebar-wrapper">
+    <h2>Contents</h2>
+    <div class="sidebar-localtoc">
+      <ul>
+<li><a class="reference internal" href="#">Taxoniq: Taxon Information Query - fast, offline querying of NCBI Taxonomy and related data</a><ul>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li><a class="reference internal" href="#retrieving-sequences">Retrieving sequences</a></li>
+<li><a class="reference internal" href="#command-line-interface">Command-line interface</a><ul>
+<li><a class="reference internal" href="#retrieving-sequences-using-the-cli">Retrieving sequences using the CLI</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#using-the-nr-nt-databases">Using the nr/nt databases</a></li>
+<li><a class="reference internal" href="#streaming-cli-i-o">Streaming CLI I/O</a></li>
+<li><a class="reference internal" href="#cookbook">Cookbook</a></li>
+<li><a class="reference internal" href="#links">Links</a></li>
+<li><a class="reference internal" href="#license">License</a></li>
+<li><a class="reference internal" href="#bugs">Bugs</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id2">API documentation</a></li>
+<li><a class="reference internal" href="#id3">Change log</a></li>
+</ul>
+
+    </div>
+  </div>
+</div>
+<div class="sidebar-block">
+  <div class="sidebar-wrapper">
+    <div id="main-search">
+      <form class="form-inline" action="search.html" method="GET" role="form">
+        <div class="input-group">
+          <input name="q" type="text" class="form-control" placeholder="Search...">
+        </div>
+        <input type="hidden" name="check_keywords" value="yes" />
+        <input type="hidden" name="area" value="default" />
+      </form>
+    </div>
+  </div>
+</div>
+      
+    </div>
+  </div>
+        <div id="right-column">
+          
+          <div role="navigation" aria-label="breadcrumbs navigation">
+            <ol class="breadcrumb">
+              <li><a href="#">Docs</a></li>
+              
+              <li>Taxoniq: Taxon Information Query - fast, offline querying of NCBI Taxonomy and related data</li>
+            </ol>
+          </div>
+          
+          <div class="document clearer body">
+            
+  <div class="section" id="taxoniq-taxon-information-query-fast-offline-querying-of-ncbi-taxonomy-and-related-data">
+<h1>Taxoniq: Taxon Information Query - fast, offline querying of NCBI Taxonomy and related data<a class="headerlink" href="#taxoniq-taxon-information-query-fast-offline-querying-of-ncbi-taxonomy-and-related-data" title="Permalink to this headline">¶</a></h1>
+<p>Taxoniq is a Python and command-line interface to the
+<a class="reference external" href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7408187/">NCBI Taxonomy database</a> and selected data sources that
+cross-reference it.</p>
+<p>Taxoniq’s features include:</p>
+<ul class="simple">
+<li><p>Pre-computed indexes updated monthly from NCBI, <a class="reference external" href="https://biocore.github.io/wol/">WoL</a> and cross-referenced databases</p></li>
+<li><p>Offline operation: all indexes are bundled with the package; no network calls are made when querying taxon information
+(separately, Taxoniq can fetch the nucleotide or protein sequences over the network given a taxon or sequence
+accession ID - see <strong>Retrieving sequences</strong> below)</p></li>
+<li><p>A CLI capable of JSON I/O, batch processing and streaming of inputs for ease of use and pipelining in shell scripts</p></li>
+<li><p>A stable, <a class="reference external" href="https://chanzuckerberg.github.io/taxoniq/#module-taxoniq">well-documented</a>, type-hinted Python API
+(Python 3.6 and higher is supported)</p></li>
+<li><p>Comprehensive testing and continuous integration</p></li>
+<li><p>An intuitive interface with useful defaults</p></li>
+<li><p>Compactness, readability, and extensibility</p></li>
+</ul>
+<p>The Taxoniq package bundles an indexed, compressed copy of the
+<a class="reference external" href="https://ncbiinsights.ncbi.nlm.nih.gov/2018/02/22/new-taxonomy-files-available-with-lineage-type-and-host-information/">NCBI taxonomy database files</a>,
+the <a class="reference external" href="https://www.ncbi.nlm.nih.gov/refseq/">NCBI RefSeq</a> nucleotide and protein sequence accession IDs associated with
+each taxon, the <a class="reference external" href="https://biocore.github.io/wol/">WoL</a> kingdom-wide phylogenomic distance database, and relevant
+information from other databases. Sequence accession IDs which appear in the NCBI RefSeq BLAST databases are indexed so
+that given a taxon ID, accession ID, or taxon name, you can quickly retrieve the taxon’s rank, lineage, description,
+citations, representative RefSeq IDs, LCA information, evolutionary distance, sequence (with a network call), and more,
+as described in the <strong>Cookbook</strong> section below. Full <a class="reference external" href="https://chanzuckerberg.github.io/taxoniq/#module-taxoniq">API documentation</a>
+is available.</p>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip3</span> <span class="n">install</span> <span class="n">taxoniq</span>
+</pre></div>
+</div>
+<p>Pre-built wheels are available for Python 3.5+ on Linux and MacOS. On MacOS 11 Big Sur, Pip 20.3+ is required to install
+pre-built wheels (you can check your version with <code class="docutils literal notranslate"><span class="pre">pip3</span> <span class="pre">--version</span></code> and upgrade with <code class="docutils literal notranslate"><span class="pre">pip3</span> <span class="pre">install</span> <span class="pre">--upgrade</span> <span class="pre">pip</span></code>).</p>
+</div>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">taxoniq</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">taxoniq</span><span class="o">.</span><span class="n">Taxon</span><span class="p">(</span><span class="mi">9606</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">scientific_name</span>
+<span class="go">&#39;Homo sapiens&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">common_name</span>
+<span class="go">&#39;human&#39;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">ranked_lineage</span>
+<span class="go">[taxoniq.Taxon(9606), taxoniq.Taxon(9605), taxoniq.Taxon(9604), taxoniq.Taxon(9443),</span>
+<span class="go"> taxoniq.Taxon(40674), taxoniq.Taxon(7711), taxoniq.Taxon(33208), taxoniq.Taxon(2759)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">lineage</span><span class="p">)</span>
+<span class="go">32</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[(</span><span class="n">t</span><span class="o">.</span><span class="n">rank</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">t</span><span class="o">.</span><span class="n">scientific_name</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">t</span><span class="o">.</span><span class="n">ranked_lineage</span><span class="p">]</span>
+<span class="go">[(&#39;species&#39;, &#39;Homo sapiens&#39;), (&#39;genus&#39;, &#39;Homo&#39;), (&#39;family&#39;, &#39;Hominidae&#39;), (&#39;order&#39;, &#39;Primates&#39;),</span>
+<span class="go"> (&#39;class&#39;, &#39;Mammalia&#39;), (&#39;phylum&#39;, &#39;Chordata&#39;), (&#39;kingdom&#39;, &#39;Metazoa&#39;), (&#39;superkingdom&#39;, &#39;Eukaryota&#39;)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[(</span><span class="n">c</span><span class="o">.</span><span class="n">rank</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">common_name</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">t</span><span class="o">.</span><span class="n">child_nodes</span><span class="p">]</span>
+<span class="go">[(&#39;subspecies&#39;, &#39;Neandertal&#39;), (&#39;subspecies&#39;, &#39;Denisova hominin&#39;)]</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">refseq_representative_genome_accessions</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span>
+<span class="go">[taxoniq.Accession(&#39;NC_000001.11&#39;), taxoniq.Accession(&#39;NC_000002.12&#39;), taxoniq.Accession(&#39;NC_000003.12&#39;),</span>
+<span class="go"> taxoniq.Accession(&#39;NC_000004.12&#39;), taxoniq.Accession(&#39;NC_000005.10&#39;), taxoniq.Accession(&#39;NC_000006.12&#39;),</span>
+<span class="go"> taxoniq.Accession(&#39;NC_000007.14&#39;), taxoniq.Accession(&#39;NC_000008.11&#39;), taxoniq.Accession(&#39;NC_000009.12&#39;),</span>
+<span class="go"> taxoniq.Accession(&#39;NC_000010.11&#39;)]</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">url</span>
+<span class="go">&#39;https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&amp;id=9606&#39;</span>
+
+<span class="go"># Wikidata provides structured links to many databases about taxa represented on Wikipedia</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">wikidata_url</span>
+<span class="go">&#39;https://www.wikidata.org/wiki/Q15978631&#39;</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">t2</span> <span class="o">=</span> <span class="n">taxoniq</span><span class="o">.</span><span class="n">Taxon</span><span class="p">(</span><span class="n">scientific_name</span><span class="o">=</span><span class="s2">&quot;Bacillus anthracis&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t2</span><span class="o">.</span><span class="n">description</span>
+<span class="go">&#39;&lt;p class=&quot;mw-empty-elt&quot;&gt; &lt;/p&gt; &lt;p class=&quot;mw-empty-elt&quot;&gt; &lt;/p&gt; &lt;p&gt;&lt;i&gt;&lt;b&gt;Bacillus anthracis&lt;/b&gt;&lt;/i&gt;</span>
+<span class="go"> is the agent of anthrax—a common disease of livestock and, occasionally, of humans—and the only</span>
+<span class="go"> obligate pathogen within the genus &lt;i&gt;Bacillus&lt;/i&gt;. This disease can be classified as a zoonosis,</span>
+<span class="go"> causing infected animals to transmit the disease to humans. &lt;i&gt;B. anthracis&lt;/i&gt; is a Gram-positive,</span>
+<span class="go"> endospore-forming, rod-shaped bacterium, with a width of 1.0–1.2 µm and a length of 3–5&amp;#160;µm.</span>
+<span class="go"> It can be grown in an ordinary nutrient medium under aerobic or anaerobic conditions.&lt;/p&gt;</span>
+<span class="go"> &lt;p&gt;It is one of few bacteria known to synthesize a protein capsule (poly-D-gamma-glutamic acid).</span>
+<span class="go"> Like &lt;i&gt;Bordetella pertussis&lt;/i&gt;, it forms a calmodulin-dependent adenylate cyclase exotoxin known</span>
+<span class="go"> as anthrax edema factor, along with anthrax lethal factor. It bears close genotypic and phenotypic</span>
+<span class="go"> resemblance to &lt;i&gt;Bacillus cereus&lt;/i&gt; and &lt;i&gt;Bacillus thuringiensis&lt;/i&gt;. All three species share</span>
+<span class="go"> cellular dimensions and morphology&lt;/p&gt;...&#39;</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">t3</span> <span class="o">=</span> <span class="n">taxoniq</span><span class="o">.</span><span class="n">Taxon</span><span class="p">(</span><span class="n">accession_id</span><span class="o">=</span><span class="s2">&quot;NC_000913.3&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t3</span><span class="o">.</span><span class="n">scientific_name</span>
+<span class="go">&#39;Escherichia coli str. K-12 substr. MG1655&quot;&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t3</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">common_name</span>
+<span class="go">&#39;E. coli&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t3</span><span class="o">.</span><span class="n">refseq_representative_genome_accessions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">length</span>
+<span class="go">4641652</span>
+
+<span class="go"># The get_from_s3() method is the only command that will trigger a network call.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">seq</span> <span class="o">=</span> <span class="n">t3</span><span class="o">.</span><span class="n">refseq_representative_genome_accessions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_from_s3</span><span class="p">()</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+<span class="go">4641652</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">seq</span><span class="p">[:</span><span class="mi">64</span><span class="p">]</span>
+<span class="go">b&#39;AGCTTTTCATTCTGACTGCAACGGGCAATATGTCTCTGTGTGGATTAAAAAAAGAGTGTCTGAT&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="retrieving-sequences">
+<h2>Retrieving sequences<a class="headerlink" href="#retrieving-sequences" title="Permalink to this headline">¶</a></h2>
+<p>Mirrors of the NCBI BLAST databases are maintained on <a class="reference external" href="https://registry.opendata.aws/ncbi-blast-databases/">AWS S3</a>
+(<code class="docutils literal notranslate"><span class="pre">s3://ncbi-blast-databases</span></code>) and Google Storage (<code class="docutils literal notranslate"><span class="pre">gs://blast-db</span></code>). This is a key resource, since S3 and GS have
+superior bandwidth and throughput compared to the NCBI FTP server, so range requests can be used to retrieve individual
+sequences from the database files without downloading and keeping a copy of the whole database.</p>
+<p>The Taxoniq PyPI distribution (the package you install using <code class="docutils literal notranslate"><span class="pre">pip3</span> <span class="pre">install</span> <span class="pre">taxoniq</span></code>) indexes sequence accession IDs for
+the following NCBI BLAST databases:</p>
+<ul class="simple">
+<li><p>Refseq viruses representative genomes (<code class="docutils literal notranslate"><span class="pre">ref_viruses_rep_genomes</span></code>) (nucleotide)</p></li>
+<li><p>Refseq prokaryote representative genomes (contains refseq assembly) (<code class="docutils literal notranslate"><span class="pre">ref_prok_rep_genomes</span></code>) (nucleotide)</p></li>
+<li><p>RefSeq Eukaryotic Representative Genome Database (<code class="docutils literal notranslate"><span class="pre">ref_euk_rep_genomes</span></code>) (nucleotide)</p></li>
+<li><p>Betacoronavirus (nucleotide)</p></li>
+</ul>
+<p>Given an accession ID, Taxoniq can issue a single HTTP request and return a file-like object streaming the nucleotide
+sequence from the S3 or GS mirror as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">taxoniq</span><span class="o">.</span><span class="n">Accession</span><span class="p">(</span><span class="s2">&quot;NC_000913.3&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">get_from_s3</span><span class="p">()</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+    <span class="n">fh</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>For brevity, you can use <a class="reference external" href="https://urllib3.readthedocs.io/en/latest/advanced-usage.html">urllib3.response.HTTPResponse.stream</a>
+instead of <code class="docutils literal notranslate"><span class="pre">read(...)</span></code> to avoid holding the entire sequence in memory:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">taxoniq</span><span class="o">.</span><span class="n">Accession</span><span class="p">(</span><span class="s2">&quot;NC_000913.3&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">get_from_s3</span><span class="p">()</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">fh</span><span class="o">.</span><span class="n">stream</span><span class="p">():</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To retrieve many sequences quickly, you may want to use a threadpool to open multiple network connections at once:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">concurrent.futures</span> <span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
+<span class="k">def</span> <span class="nf">fetch_seq</span><span class="p">(</span><span class="n">accession</span><span class="p">):</span>
+    <span class="n">seq</span> <span class="o">=</span> <span class="n">accession</span><span class="o">.</span><span class="n">get_from_s3</span><span class="p">()</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">accession</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span>
+
+<span class="n">taxon</span> <span class="o">=</span> <span class="n">taxoniq</span><span class="o">.</span><span class="n">Taxon</span><span class="p">(</span><span class="n">scientific_name</span><span class="o">=</span><span class="s2">&quot;Apis mellifera&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">accession</span><span class="p">,</span> <span class="n">seq</span> <span class="ow">in</span> <span class="n">ThreadPoolExecutor</span><span class="p">()</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">fetch_seq</span><span class="p">,</span> <span class="n">taxon</span><span class="o">.</span><span class="n">refseq_representative_genome_accessions</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">accession</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>This operation is also available in the CLI, as described below.</p>
+</div>
+<div class="section" id="command-line-interface">
+<h2>Command-line interface<a class="headerlink" href="#command-line-interface" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">pip3</span> <span class="pre">install</span> <span class="pre">taxoniq</span></code> installs a command-line utility, <code class="docutils literal notranslate"><span class="pre">taxoniq</span></code>, which can be used to perform many of the same
+functions provided by the Python API:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;</span><span class="n">taxoniq</span> <span class="n">child</span><span class="o">-</span><span class="n">nodes</span> <span class="o">--</span><span class="n">taxon</span><span class="o">-</span><span class="nb">id</span> <span class="mi">2</span> <span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="nb">format</span> <span class="s1">&#39;</span><span class="si">{tax_id}</span><span class="s1">: </span><span class="si">{scientific_name}</span><span class="s1">&#39;</span>
+<span class="p">[</span>
+    <span class="s2">&quot;1224: Proteobacteria&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;2323: Bacteria incertae sedis&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;32066: Fusobacteria&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;40117: Nitrospirae&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;48479: environmental samples&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;49928: unclassified Bacteria&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;57723: Acidobacteria&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;68297: Dictyoglomi&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;74152: Elusimicrobia&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;200783: Aquificae&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;200918: Thermotogae&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;200930: Deferribacteres&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;200938: Chrysiogenetes&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;200940: Thermodesulfobacteria&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;203691: Spirochaetes&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;508458: Synergistetes&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;1783257: PVC group&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;1783270: FCB group&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;1783272: Terrabacteria group&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;1802340: Nitrospinae/Tectomicrobia group&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;1930617: Calditrichaeota&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;2138240: Coprothermobacterota&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;2498710: Caldiserica/Cryosericota group&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;2698788: Candidatus Krumholzibacteriota&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;2716431: Coleospermum&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;2780997: Vogosella&quot;</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>See <code class="docutils literal notranslate"><span class="pre">taxoniq</span> <span class="pre">--help</span></code> for full details.</p>
+<div class="section" id="retrieving-sequences-using-the-cli">
+<h3>Retrieving sequences using the CLI<a class="headerlink" href="#retrieving-sequences-using-the-cli" title="Permalink to this headline">¶</a></h3>
+<p>To retrieve an individual sequence in FASTA format given an accession ID, use <code class="docutils literal notranslate"><span class="pre">taxoniq</span> <span class="pre">get-from-s3</span> <span class="pre">--accession-id</span> <span class="pre">ACCESSION_ID</span></code>.</p>
+<p>To retrieve multiple sequences in FASTA format, use <code class="docutils literal notranslate"><span class="pre">--accession-id</span> <span class="pre">-</span></code> and pass the IDs on standard input, one per line:
+<code class="docutils literal notranslate"><span class="pre">taxoniq</span> <span class="pre">refseq-representative-genome-accessions</span> <span class="pre">--scientific-name=&quot;Apis</span> <span class="pre">mellifera&quot;</span> <span class="pre">|</span> <span class="pre">jq</span> <span class="pre">-r</span> <span class="pre">.[]</span> <span class="pre">|</span> <span class="pre">taxoniq</span> <span class="pre">get-from-s3</span> <span class="pre">--accession-id</span> <span class="pre">-</span></code>.</p>
+</div>
+</div>
+<div class="section" id="using-the-nr-nt-databases">
+<h2>Using the nr/nt databases<a class="headerlink" href="#using-the-nr-nt-databases" title="Permalink to this headline">¶</a></h2>
+<p>Because of their size, taxoniq wheels with indexes of the NT (GenBank Non-redundant nucleotide) BLAST database are
+distributed on GitHub instead of PyPI. After running <code class="docutils literal notranslate"><span class="pre">pip3</span> <span class="pre">install</span> <span class="pre">taxoniq</span></code>, you can install the NT indexes as follows:</p>
+<ul class="simple">
+<li><p>Navigate to <a class="reference external" href="https://github.com/chanzuckerberg/taxoniq/releases/latest">https://github.com/chanzuckerberg/taxoniq/releases/latest</a></p></li>
+<li><p>In the “Assets” section, for each link that starts with “ncbi_genbank” and ends with “.whl”:</p>
+<ul>
+<li><p>Right-click on the asset link, and click “Copy link address”</p></li>
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">pip3</span> <span class="pre">install</span> <span class="pre">--upgrade</span> <span class="pre">&lt;PASTED</span> <span class="pre">LINK</span> <span class="pre">ADDRESS&gt;</span></code></p></li>
+</ul>
+</li>
+</ul>
+<p>The NT index packages also contain indexes for the RefSeq representative genomes and Betacoronavirus accessions (meaning
+they are are superset of the PyPI packages).</p>
+</div>
+<div class="section" id="streaming-cli-i-o">
+<h2>Streaming CLI I/O<a class="headerlink" href="#streaming-cli-i-o" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">taxoniq</span></code> command-line interface can take streaming input from stdin and produce streaming output on stdout. This
+allows the amortization of startup and index load time and efficient operation as part of shell pipelines.</p>
+<p>The following
+example shows the pipelined operation of <a class="reference external" href="https://github.com/OpenGene/fastp">fastp</a>,
+<a class="reference external" href="https://github.com/DerrickWood/kraken2/wiki">kraken2</a>, and taxoniq to annotate hits found in a Betacoronavirus sample:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ow">in</span> <span class="n">progress</span>
+</pre></div>
+</div>
+<!--
+fastp --thread $KRAKEN2_NUM_THREADS --low_complexity_filter -i R1.fastq.gz -I R2.fastq.gz -o filtered.R1.fastq.gz -O filtered.R2.fastq.gz
+
+kraken2 --paired nohuman_1.fastq nohuman_2.fastq --classified-out 'classified#.fastq' | taxoniq
+--></div>
+<div class="section" id="cookbook">
+<h2>Cookbook<a class="headerlink" href="#cookbook" title="Permalink to this headline">¶</a></h2>
+<p>In progress</p>
+</div>
+<div class="section" id="links">
+<h2>Links<a class="headerlink" href="#links" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/chanzuckerberg/taxoniq">Project home page (GitHub)</a></p></li>
+<li><p><a class="reference external" href="https://chanzuckerberg.github.io/taxoniq/">Documentation</a></p></li>
+<li><p><a class="reference external" href="https://pypi.python.org/pypi/taxoniq">Package distribution (PyPI)</a></p></li>
+<li><p><a class="reference external" href="https://github.com/chanzuckerberg/taxoniq/blob/master/Changes.rst">Change log</a></p></li>
+<li><p><a class="reference external" href="http://etetoolkit.org/">ETE Toolkit</a> and the <a class="reference external" href="http://etetoolkit.org/docs/latest/tutorial/index.html">ETE Tutorial</a> - a general purpose
+phylogenetic tree toolkit with a rich Python interface</p></li>
+</ul>
+</div>
+<div class="section" id="license">
+<h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
+<p>Taxoniq software is licensed under the terms of the <a class="reference external" href="LICENSE">MIT License</a>.</p>
+<p>Distributions of this package contain data from
+<a class="reference external" href="https://www.ncbi.nlm.nih.gov/">NCBI Taxonomy, NCBI GenBank, and NCBI RefSeq</a> (Bethesda (MD): National Library of
+Medicine (US), National Center for Biotechnology Information). These data are released into the public domain under the
+<a class="reference external" href="LICENSE.NCBI">NCBI Public Domain Notice</a>.</p>
+<p>Distributions of this package contain text excerpts from Wikipedia licensed under the terms of the
+<a class="reference external" href="LICENSE.WIKIPEDIA">CC-BY-SA License</a>.</p>
+</div>
+<div class="section" id="bugs">
+<h2>Bugs<a class="headerlink" href="#bugs" title="Permalink to this headline">¶</a></h2>
+<p>Please report bugs, issues, feature requests, etc. on <a class="reference external" href="https://github.com/chanzuckerberg/taxoniq/issues">GitHub</a>.</p>
+</div>
+</div>
+<div class="section" id="id2">
+<h1>API documentation<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-taxoniq"></span><dl class="py class">
+<dt id="taxoniq.Accession">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">taxoniq.</span></code><code class="sig-name descname"><span class="pre">Accession</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">accession_id</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/taxoniq.html#Accession"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#taxoniq.Accession" title="Permalink to this definition">¶</a></dt>
+<dd><p>An object representing an NCBI GenBank nucleotide or protein sequence accession ID.
+This is used by Taxoniq to represent sequences associated with taxons; use <a class="reference internal" href="#taxoniq.Taxon" title="taxoniq.Taxon"><code class="xref py py-class docutils literal notranslate"><span class="pre">Taxon</span></code></a> as the starting point.</p>
+<dl class="py method">
+<dt id="taxoniq.Accession.blast_db">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">blast_db</span></code><a class="headerlink" href="#taxoniq.Accession.blast_db" title="Permalink to this definition">¶</a></dt>
+<dd><p>The BLAST database in which this sequence accession ID was indexed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Accession.blast_db_volume">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">blast_db_volume</span></code><a class="headerlink" href="#taxoniq.Accession.blast_db_volume" title="Permalink to this definition">¶</a></dt>
+<dd><p>The numeric BLAST database volume ID in which this sequence accession was indexed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Accession.db_offset">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">db_offset</span></code><a class="headerlink" href="#taxoniq.Accession.db_offset" title="Permalink to this definition">¶</a></dt>
+<dd><p>The byte offset in the BLAST database volume at which this sequence starts.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Accession.get_from_gs">
+<code class="sig-name descname"><span class="pre">get_from_gs</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/taxoniq.html#Accession.get_from_gs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#taxoniq.Accession.get_from_gs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a file-like object streaming the nucleotide sequence for this accession from the Google Storage NCBI
+BLAST database mirror (<a class="reference external" href="https://registry.opendata.aws/ncbi-blast-databases/">https://registry.opendata.aws/ncbi-blast-databases/</a>), if available.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Accession.get_from_s3">
+<code class="sig-name descname"><span class="pre">get_from_s3</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/taxoniq.html#Accession.get_from_s3"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#taxoniq.Accession.get_from_s3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a file-like object streaming the nucleotide sequence for this accession from the AWS S3 NCBI BLAST
+database mirror (<a class="reference external" href="https://registry.opendata.aws/ncbi-blast-databases/">https://registry.opendata.aws/ncbi-blast-databases/</a>), if available.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Accession.length">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">length</span></code><a class="headerlink" href="#taxoniq.Accession.length" title="Permalink to this definition">¶</a></dt>
+<dd><p>The length of the sequence (number of nucleotides or amino acids).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Accession.tax_id">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">tax_id</span></code><a class="headerlink" href="#taxoniq.Accession.tax_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>The taxon ID associated with this sequence accession ID.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Accession.url">
+<code class="sig-name descname"><span class="pre">url</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/taxoniq.html#Accession.url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#taxoniq.Accession.url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the HTTPS URL for the NCBI GenBank web page representing this sequence accession ID.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="taxoniq.BLASTDatabase">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">taxoniq.</span></code><code class="sig-name descname"><span class="pre">BLASTDatabase</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#taxoniq.BLASTDatabase" title="Permalink to this definition">¶</a></dt>
+<dd><p>An enumeration.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt id="taxoniq.NoValue">
+<em class="property"><span class="pre">exception</span> </em><code class="sig-prename descclassname"><span class="pre">taxoniq.</span></code><code class="sig-name descname"><span class="pre">NoValue</span></code><a class="reference internal" href="_modules/taxoniq.html#NoValue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#taxoniq.NoValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt id="taxoniq.Rank">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">taxoniq.</span></code><code class="sig-name descname"><span class="pre">Rank</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#taxoniq.Rank" title="Permalink to this definition">¶</a></dt>
+<dd><p>An enumeration.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="taxoniq.Taxon">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">taxoniq.</span></code><code class="sig-name descname"><span class="pre">Taxon</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tax_id</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accession_id</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scientific_name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/taxoniq.html#Taxon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#taxoniq.Taxon" title="Permalink to this definition">¶</a></dt>
+<dd><p>An object representing an NCBI Taxonomy taxon, identified by its taxon ID. The object can be instantiated by
+uniquely identifying a taxon using the numeric taxon ID, an alphanumeric accession ID of a sequence associated with
+the taxon ID, or the scientific name of the taxon.</p>
+<dl class="py method">
+<dt id="taxoniq.Taxon.best_available_description">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">best_available_description</span></code><a class="headerlink" href="#taxoniq.Taxon.best_available_description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Introductory paragraph from English Wikipedia for this taxon or the first parent taxon where a description is
+available.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Taxon.best_refseq_taxon">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">best_refseq_taxon</span></code><a class="headerlink" href="#taxoniq.Taxon.best_refseq_taxon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Best related taxon with refseq representative genome sequence available.
+For viruses, this is the RefSeq “genome neighbor” as defined in
+<a class="reference external" href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4383986/">https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4383986/</a> and retrieved from
+<a class="reference external" href="https://ftp.ncbi.nlm.nih.gov/genomes/Viruses/Viruses_RefSeq_and_neighbors_genome_data.tab">https://ftp.ncbi.nlm.nih.gov/genomes/Viruses/Viruses_RefSeq_and_neighbors_genome_data.tab</a>.
+For other domains, this is the RefSeq representative genome for the taxon’s species, if available, as
+seen in the species_taxid column of <a class="reference external" href="https://ftp.ncbi.nlm.nih.gov/genomes/refseq/assembly_summary_refseq.txt">https://ftp.ncbi.nlm.nih.gov/genomes/refseq/assembly_summary_refseq.txt</a>.</p>
+<p>The accessions for the genome can be accessed as follows:</p>
+<blockquote>
+<div><p>Taxon(123).best_refseq_taxon.refseq_representative_genome_accessions</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Taxon.child_nodes">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">child_nodes</span></code><a class="headerlink" href="#taxoniq.Taxon.child_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of taxon objects that list this taxon as their parent.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Taxon.closest_taxon_with_refseq_genome">
+<code class="sig-name descname"><span class="pre">closest_taxon_with_refseq_genome</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/taxoniq.html#Taxon.closest_taxon_with_refseq_genome"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#taxoniq.Taxon.closest_taxon_with_refseq_genome" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a taxon closest by phylogenetic distance as computed by WoL and with a refseq genome associated</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Taxon.common_name">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">common_name</span></code><a class="headerlink" href="#taxoniq.Taxon.common_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Common name of the taxon. In taxoniq, this is defined as the NCBI taxonomy blast name if available, or the
+genbank common name if available, or the first listed common name. See
+<a class="reference external" href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245000/">https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245000/</a> for definitions of these fields.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Taxon.description">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">description</span></code><a class="headerlink" href="#taxoniq.Taxon.description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Introductory paragraph for this taxon from English Wikipedia, if available.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Taxon.distance">
+<em class="property"><span class="pre">classmethod</span> </em><code class="sig-name descname"><span class="pre">distance</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">taxa</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/taxoniq.html#Taxon.distance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#taxoniq.Taxon.distance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Phylogenetic distance between taxa as computed by WoL</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Taxon.host">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">host</span></code><a class="headerlink" href="#taxoniq.Taxon.host" title="Permalink to this definition">¶</a></dt>
+<dd><p>A text description of a symbiont host or hosts for this taxon’s organism, if any.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Taxon.lca">
+<em class="property"><span class="pre">classmethod</span> </em><code class="sig-name descname"><span class="pre">lca</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">taxa</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/taxoniq.html#Taxon.lca"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#taxoniq.Taxon.lca" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a list of Taxon objects, returns the last common ancestor taxon.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Taxon.lineage">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">lineage</span></code><a class="headerlink" href="#taxoniq.Taxon.lineage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lineage for this taxon (the list of parent nodes from the taxon to the root of the taxonomic tree).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Taxon.parent">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">parent</span></code><a class="headerlink" href="#taxoniq.Taxon.parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>The parent taxon for this taxon.</p>
+<p>For the root of the tree, <cite>parent</cite> is <cite>None</cite>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Taxon.rank">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">rank</span></code><a class="headerlink" href="#taxoniq.Taxon.rank" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rank of the taxon. See <a class="reference external" href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7408187/#sec9title">https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7408187/#sec9title</a> for more details.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Taxon.ranked_child_nodes">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">ranked_child_nodes</span></code><a class="headerlink" href="#taxoniq.Taxon.ranked_child_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of child nodes in the next main taxonomic rank (species, genus, family, order, class, phylum, kingdom,
+superkingdom).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Taxon.ranked_lineage">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">ranked_lineage</span></code><a class="headerlink" href="#taxoniq.Taxon.ranked_lineage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lineage of main taxonomic ranks (species, genus, family, order, class, phylum, kingdom, superkingdom).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Taxon.refseq_genome_accessions">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">refseq_genome_accessions</span></code><a class="headerlink" href="#taxoniq.Taxon.refseq_genome_accessions" title="Permalink to this definition">¶</a></dt>
+<dd><p>A list of <a class="reference internal" href="#taxoniq.Accession" title="taxoniq.Accession"><code class="xref py py-class docutils literal notranslate"><span class="pre">Accession</span></code></a> objects for sequences in the most recent RefSeq genome assembly for this
+taxon, if available.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Taxon.refseq_representative_genome_accessions">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">refseq_representative_genome_accessions</span></code><a class="headerlink" href="#taxoniq.Taxon.refseq_representative_genome_accessions" title="Permalink to this definition">¶</a></dt>
+<dd><p>A list of <a class="reference internal" href="#taxoniq.Accession" title="taxoniq.Accession"><code class="xref py py-class docutils literal notranslate"><span class="pre">Accession</span></code></a> objects for sequences in the RefSeq representative genome assembly for this
+taxon, if available.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Taxon.scientific_name">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">scientific_name</span></code><a class="headerlink" href="#taxoniq.Taxon.scientific_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The unique scientific name of the taxon.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Taxon.url">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">url</span></code><a class="headerlink" href="#taxoniq.Taxon.url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the HTTPS URL for the NCBI Taxonomy web page representing this taxon.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Taxon.wikidata_id">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">wikidata_id</span></code><a class="headerlink" href="#taxoniq.Taxon.wikidata_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wikidata ID for this taxon.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="taxoniq.Taxon.wikidata_url">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">wikidata_url</span></code><a class="headerlink" href="#taxoniq.Taxon.wikidata_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>URL of the Wikidata web page representing this taxon.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt id="taxoniq.TaxoniqException">
+<em class="property"><span class="pre">exception</span> </em><code class="sig-prename descclassname"><span class="pre">taxoniq.</span></code><code class="sig-name descname"><span class="pre">TaxoniqException</span></code><a class="reference internal" href="_modules/taxoniq.html#TaxoniqException"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#taxoniq.TaxoniqException" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="id3">
+<h1>Change log<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#changes-for-v0-5-2-2021-04-14">Changes for v0.5.2 (2021-04-14)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#changes-for-v0-5-1-2021-04-14">Changes for v0.5.1 (2021-04-14)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#changes-for-v0-5-0-2021-04-13">Changes for v0.5.0 (2021-04-13)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#changes-for-v0-4-0-2021-04-02">Changes for v0.4.0 (2021-04-02)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#changes-for-v0-3-4-2021-04-01">Changes for v0.3.4 (2021-04-01)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#changes-for-v0-3-3-2021-04-01">Changes for v0.3.3 (2021-04-01)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#changes-for-v0-3-1-2021-04-01">Changes for v0.3.1 (2021-04-01)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#changes-for-v0-3-0-2021-03-27">Changes for v0.3.0 (2021-03-27)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#changes-for-v0-2-0-2021-03-26">Changes for v0.2.0 (2021-03-26)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#changes-for-v0-1-7-2021-03-25">Changes for v0.1.7 (2021-03-25)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#changes-for-v0-1-6-2021-03-25">Changes for v0.1.6 (2021-03-25)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#changes-for-v0-1-5-2021-03-25">Changes for v0.1.5 (2021-03-25)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#changes-for-v0-1-4-2021-03-25">Changes for v0.1.4 (2021-03-25)</a></li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+            
+  <div class="footer-relations">
+    
+      <div class="pull-right">
+        <a class="btn btn-default" href="changelog.html" title="next chapter (use the right arrow)">Release Notes</a>
+      </div>
+    </div>
+    <div class="clearer"></div>
+  
+        </div>
+        <div class="clearfix"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="changelog.html" title="Release Notes"
+             >next</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">taxoniq  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Taxoniq: Taxon Information Query - fast, offline querying of NCBI Taxonomy and related data</a></li> 
+      </ul>
+    </div>
+<script type="text/javascript">
+  $("#mobile-toggle a").click(function () {
+    $("#left-column").toggle();
+  });
+</script>
+<script type="text/javascript" src="_static/js/bootstrap.js"></script>
+  <div class="footer">
+    &copy; Copyright CZI Foundation. Created using <a href="http://sphinx.pocoo.org/">Sphinx</a>.
+  </div>
+  </body>
+</html>

@@ -1,0 +1,512 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <!-- Licensed under the Apache 2.0 License -->
+  <link rel="stylesheet" type="text/css" href="../_static/fonts/open-sans/stylesheet.css" />
+  <!-- Licensed under the SIL Open Font License -->
+  <link rel="stylesheet" type="text/css" href="../_static/fonts/source-serif-pro/source-serif-pro.css" />
+  <link rel="stylesheet" type="text/css" href="../_static/css/bootstrap.min.css" />
+  <link rel="stylesheet" type="text/css" href="../_static/css/bootstrap-theme.min.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+    <title>taxoniq &#8212; taxoniq  documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/guzzle.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+  
+   
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">taxoniq  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">taxoniq</a></li> 
+      </ul>
+    </div>
+    <div class="container-wrapper">
+
+      <div id="mobile-toggle">
+        <a href="#"><span class="glyphicon glyphicon-align-justify" aria-hidden="true"></span></a>
+      </div>
+  <div id="left-column">
+    <div class="sphinxsidebar"><a href="
+    ../index.html" class="text-logo">taxoniq</a>
+<div class="sidebar-block">
+  <div class="sidebar-wrapper">
+    <div id="main-search">
+      <form class="form-inline" action="../search.html" method="GET" role="form">
+        <div class="input-group">
+          <input name="q" type="text" class="form-control" placeholder="Search...">
+        </div>
+        <input type="hidden" name="check_keywords" value="yes" />
+        <input type="hidden" name="area" value="default" />
+      </form>
+    </div>
+  </div>
+</div>
+      
+    </div>
+  </div>
+        <div id="right-column">
+          
+          <div role="navigation" aria-label="breadcrumbs navigation">
+            <ol class="breadcrumb">
+              <li><a href="../index.html">Docs</a></li>
+              
+                <li><a href="index.html">Module code</a></li>
+              
+              <li>taxoniq</li>
+            </ol>
+          </div>
+          
+          <div class="document clearer body">
+            
+  <h1>Source code for taxoniq</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+
+<span class="kn">import</span> <span class="nn">urllib3</span>
+<span class="kn">import</span> <span class="nn">zstandard</span>
+
+<span class="kn">import</span> <span class="nn">ncbi_taxon_db</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">ncbi_genbank_accession_db</span> <span class="k">as</span> <span class="nn">accession_db</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">ncbi_refseq_accession_db</span> <span class="k">as</span> <span class="nn">accession_db</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">ncbi_genbank_accession_lengths</span> <span class="k">as</span> <span class="nn">accession_lengths</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">ncbi_refseq_accession_lengths</span> <span class="k">as</span> <span class="nn">accession_lengths</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">ncbi_genbank_accession_offsets</span> <span class="k">as</span> <span class="nn">accession_offsets</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">ncbi_refseq_accession_offsets</span> <span class="k">as</span> <span class="nn">accession_offsets</span>
+
+<span class="kn">from</span> <span class="nn">.const</span> <span class="kn">import</span> <span class="n">blast_db_timestamp</span>
+<span class="kn">from</span> <span class="nn">.util</span> <span class="kn">import</span> <span class="n">TwoBitDecoder</span>
+<span class="kn">from</span> <span class="nn">.version</span> <span class="kn">import</span> <span class="n">__version__</span>  <span class="c1"># noqa</span>
+<span class="kn">from</span> <span class="nn">.vendored.marisa_trie</span> <span class="kn">import</span> <span class="n">RecordTrie</span>
+
+<span class="n">Rank</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span>
+    <span class="s2">&quot;Rank&quot;</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">&quot;biotype clade class cohort family forma forma_specialis genotype genus infraclass infraorder isolate kingdom &quot;</span>
+     <span class="s2">&quot;morph order parvorder pathogroup phylum section series serogroup serotype species species_group species_subgroup &quot;</span>
+     <span class="s2">&quot;strain subclass subcohort subfamily subgenus subkingdom suborder subphylum subsection subspecies subtribe &quot;</span>
+     <span class="s2">&quot;subvariety superclass superfamily superkingdom superorder superphylum tribe varietas no_rank&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+
+
+<span class="n">BLASTDatabase</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span><span class="s2">&quot;BLASTDatabase&quot;</span><span class="p">,</span>
+                     <span class="p">(</span><span class="s2">&quot;ref_viruses_rep_genomes ref_prok_rep_genomes ref_euk_rep_genomes Betacoronavirus nt&quot;</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="TaxoniqException"><a class="viewcode-back" href="../index.html#taxoniq.TaxoniqException">[docs]</a><span class="k">class</span> <span class="nc">TaxoniqException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="NoValue"><a class="viewcode-back" href="../index.html#taxoniq.NoValue">[docs]</a><span class="k">class</span> <span class="nc">NoValue</span><span class="p">(</span><span class="n">TaxoniqException</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<span class="k">class</span> <span class="nc">DatabaseService</span><span class="p">:</span>
+    <span class="n">_databases</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">_get_db</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_name</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">db_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_databases</span><span class="p">:</span>
+            <span class="n">db_type</span><span class="p">,</span> <span class="n">filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_db_files</span><span class="p">[</span><span class="n">db_name</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">db_type</span> <span class="o">==</span> <span class="n">zstandard</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_databases</span><span class="p">[</span><span class="n">db_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">zstandard</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">fh</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_databases</span><span class="p">[</span><span class="n">db_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">db_type</span><span class="o">.</span><span class="n">mmap</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_databases</span><span class="p">[</span><span class="n">db_name</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">ItemAttrAccess</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Accession"><a class="viewcode-back" href="../index.html#taxoniq.Accession">[docs]</a><span class="k">class</span> <span class="nc">Accession</span><span class="p">(</span><span class="n">DatabaseService</span><span class="p">,</span> <span class="n">ItemAttrAccess</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An object representing an NCBI GenBank nucleotide or protein sequence accession ID.</span>
+<span class="sd">    This is used by Taxoniq to represent sequences associated with taxons; use :class:`Taxon` as the starting point.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_db_files</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;accessions&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">RecordTrie</span><span class="p">(</span><span class="s2">&quot;IH&quot;</span><span class="p">),</span> <span class="n">accession_db</span><span class="o">.</span><span class="n">db</span><span class="p">),</span>
+        <span class="s2">&quot;accession_offsets&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">RecordTrie</span><span class="p">(</span><span class="s2">&quot;I&quot;</span><span class="p">),</span> <span class="n">accession_offsets</span><span class="o">.</span><span class="n">db</span><span class="p">),</span>
+        <span class="s2">&quot;accession_lengths&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">RecordTrie</span><span class="p">(</span><span class="s2">&quot;I&quot;</span><span class="p">),</span> <span class="n">accession_lengths</span><span class="o">.</span><span class="n">db</span><span class="p">)</span>
+    <span class="p">}</span>
+    <span class="n">http</span> <span class="o">=</span> <span class="n">urllib3</span><span class="o">.</span><span class="n">PoolManager</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span> <span class="o">+</span> <span class="mi">4</span><span class="p">))</span>
+    <span class="n">s3_host</span> <span class="o">=</span> <span class="s2">&quot;ncbi-blast-databases.s3.amazonaws.com&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">accession_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accession_id</span> <span class="o">=</span> <span class="n">accession_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_packed_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pack_id</span><span class="p">(</span><span class="n">accession_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tax_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_blast_db</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_blast_db_volume</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_db_offset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_length</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_load_accession_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tax_id</span><span class="p">,</span> <span class="n">db_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_db</span><span class="p">(</span><span class="s2">&quot;accessions&quot;</span><span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">_packed_id</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_blast_db</span> <span class="o">=</span> <span class="n">BLASTDatabase</span><span class="p">(</span><span class="n">db_info</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_blast_db_volume</span> <span class="o">=</span> <span class="n">db_info</span> <span class="o">&amp;</span> <span class="mh">0xff</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">tax_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The taxon ID associated with this sequence accession ID.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tax_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_load_accession_data</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tax_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">blast_db</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The BLAST database in which this sequence accession ID was indexed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_blast_db</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_load_accession_data</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_blast_db</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">blast_db_volume</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The numeric BLAST database volume ID in which this sequence accession was indexed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_blast_db_volume</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_load_accession_data</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_blast_db_volume</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The length of the sequence (number of nucleotides or amino acids).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_length</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_length</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_db</span><span class="p">(</span><span class="s2">&quot;accession_lengths&quot;</span><span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">_packed_id</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_length</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">db_offset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The byte offset in the BLAST database volume at which this sequence starts.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_db_offset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_db_offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_db</span><span class="p">(</span><span class="s2">&quot;accession_offsets&quot;</span><span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">_packed_id</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_db_offset</span>
+
+    <span class="k">def</span> <span class="nf">_pack_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">accession_id</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">accession_id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.1&quot;</span><span class="p">):</span>
+            <span class="n">accession_id</span> <span class="o">=</span> <span class="n">accession_id</span><span class="p">[:</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="s2">&quot;.1&quot;</span><span class="p">)]</span>
+        <span class="n">accession_id</span> <span class="o">=</span> <span class="n">accession_id</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">accession_id</span>
+
+<div class="viewcode-block" id="Accession.get_from_s3"><a class="viewcode-back" href="../index.html#taxoniq.Accession.get_from_s3">[docs]</a>    <span class="k">def</span> <span class="nf">get_from_s3</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a file-like object streaming the nucleotide sequence for this accession from the AWS S3 NCBI BLAST</span>
+<span class="sd">        database mirror (https://registry.opendata.aws/ncbi-blast-databases/), if available.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">blast_db</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">blast_db</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blast_db_volume</span><span class="p">)</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;0&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">s3_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">s3_host</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">blast_db_timestamp</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">blast_db</span><span class="si">}</span><span class="s2">.nsq&quot;</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Range&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;bytes=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">db_offset</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">db_offset</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">//</span> <span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">http</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="n">s3_url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">preload_content</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">_decoder</span> <span class="o">=</span> <span class="n">TwoBitDecoder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+<div class="viewcode-block" id="Accession.get_from_gs"><a class="viewcode-back" href="../index.html#taxoniq.Accession.get_from_gs">[docs]</a>    <span class="k">def</span> <span class="nf">get_from_gs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a file-like object streaming the nucleotide sequence for this accession from the Google Storage NCBI</span>
+<span class="sd">        BLAST database mirror (https://registry.opendata.aws/ncbi-blast-databases/), if available.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Accession.url"><a class="viewcode-back" href="../index.html#taxoniq.Accession.url">[docs]</a>    <span class="k">def</span> <span class="nf">url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the HTTPS URL for the NCBI GenBank web page representing this sequence accession ID.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;https://www.ncbi.nlm.nih.gov/nuccore/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">accession_id</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">accession_id</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">accession_id</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">.</span><span class="si">{}</span><span class="s2">(&#39;</span><span class="si">{}</span><span class="s2">&#39;)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">accession_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Taxon"><a class="viewcode-back" href="../index.html#taxoniq.Taxon">[docs]</a><span class="k">class</span> <span class="nc">Taxon</span><span class="p">(</span><span class="n">DatabaseService</span><span class="p">,</span> <span class="n">ItemAttrAccess</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An object representing an NCBI Taxonomy taxon, identified by its taxon ID. The object can be instantiated by</span>
+<span class="sd">    uniquely identifying a taxon using the numeric taxon ID, an alphanumeric accession ID of a sequence associated with</span>
+<span class="sd">    the taxon ID, or the scientific name of the taxon.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO: more attributes from structured metadata at species/strain level e.g. gc, ploidy, ...</span>
+    <span class="n">_db_dir</span> <span class="o">=</span> <span class="n">ncbi_taxon_db</span><span class="o">.</span><span class="n">db_dir</span>
+    <span class="n">_db_files</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;taxa&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">RecordTrie</span><span class="p">(</span><span class="s2">&quot;IBBB&quot;</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_db_dir</span><span class="p">,</span> <span class="s2">&quot;taxa.marisa&quot;</span><span class="p">)),</span>
+        <span class="s2">&quot;wikidata&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">RecordTrie</span><span class="p">(</span><span class="s2">&quot;I&quot;</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_db_dir</span><span class="p">,</span> <span class="s2">&quot;wikidata.marisa&quot;</span><span class="p">)),</span>
+        <span class="s2">&quot;sn2t&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">RecordTrie</span><span class="p">(</span><span class="s2">&quot;I&quot;</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_db_dir</span><span class="p">,</span> <span class="s2">&quot;sn2taxid.marisa&quot;</span><span class="p">)),</span>
+    <span class="p">}</span>
+    <span class="n">_string_index_names</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;scientific_name&quot;</span><span class="p">,</span> <span class="s2">&quot;common_name&quot;</span><span class="p">,</span> <span class="s2">&quot;taxid2refrep&quot;</span><span class="p">,</span> <span class="s2">&quot;taxid2refseq&quot;</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">,</span>
+                           <span class="s2">&quot;en_wiki_title&quot;</span><span class="p">,</span> <span class="s2">&quot;child_nodes&quot;</span><span class="p">,</span> <span class="s2">&quot;host&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">_string_index</span> <span class="ow">in</span> <span class="n">_string_index_names</span><span class="p">:</span>
+        <span class="n">_db_files</span><span class="p">[</span><span class="n">_string_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">zstandard</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_db_dir</span><span class="p">,</span> <span class="n">_string_index</span> <span class="o">+</span> <span class="s2">&quot;.zstd&quot;</span><span class="p">))</span>
+        <span class="n">_db_files</span><span class="p">[</span><span class="n">_string_index</span> <span class="o">+</span> <span class="s2">&quot;_pos&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">RecordTrie</span><span class="p">(</span><span class="s2">&quot;I&quot;</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_db_dir</span><span class="p">,</span> <span class="n">_string_index</span> <span class="o">+</span> <span class="s2">&quot;.marisa&quot;</span><span class="p">))</span>
+
+    <span class="n">common_ranks</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">Rank</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;species&quot;</span><span class="p">,</span> <span class="s2">&quot;genus&quot;</span><span class="p">,</span> <span class="s2">&quot;family&quot;</span><span class="p">,</span> <span class="s2">&quot;order&quot;</span><span class="p">,</span> <span class="s2">&quot;class&quot;</span><span class="p">,</span> <span class="s2">&quot;phylum&quot;</span><span class="p">,</span> <span class="s2">&quot;kingdom&quot;</span><span class="p">,</span> <span class="s2">&quot;superkingdom&quot;</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tax_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">accession_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">scientific_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">(</span><span class="n">tax_id</span><span class="p">,</span> <span class="n">accession_id</span><span class="p">,</span> <span class="n">scientific_name</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">TaxoniqException</span><span class="p">(</span><span class="s2">&quot;Expected exactly one of tax_id, accession_id, or scientific_name to be set&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tax_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tax_id</span> <span class="o">=</span> <span class="n">tax_id</span>
+        <span class="k">elif</span> <span class="n">accession_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tax_id</span> <span class="o">=</span> <span class="n">Accession</span><span class="p">(</span><span class="n">accession_id</span><span class="p">)</span><span class="o">.</span><span class="n">tax_id</span>
+        <span class="k">elif</span> <span class="n">scientific_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tax_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_db</span><span class="p">(</span><span class="s2">&quot;sn2t&quot;</span><span class="p">)[</span><span class="n">scientific_name</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">division_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">specified_species</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_db</span><span class="p">(</span><span class="s2">&quot;taxa&quot;</span><span class="p">)[</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tax_id</span><span class="p">)][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rank</span> <span class="o">=</span> <span class="n">Rank</span><span class="p">(</span><span class="n">rank</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_str_attr_cache</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">_get_str_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">attr_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_str_attr_cache</span><span class="p">:</span>
+            <span class="n">pos_db</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_db</span><span class="p">(</span><span class="n">attr_name</span> <span class="o">+</span> <span class="s2">&quot;_pos&quot;</span><span class="p">)</span>
+            <span class="n">str_db</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_db</span><span class="p">(</span><span class="n">attr_name</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">pos</span> <span class="o">=</span> <span class="n">pos_db</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tax_id</span><span class="p">)][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">NoValue</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The taxon </span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s1"> has no value indexed for &quot;</span><span class="si">{</span><span class="n">attr_name</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_str_attr_cache</span><span class="p">[</span><span class="n">attr_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">str_db</span><span class="p">[</span><span class="n">pos</span><span class="p">:</span><span class="n">str_db</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">pos</span><span class="p">)]</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_str_attr_cache</span><span class="p">[</span><span class="n">attr_name</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">rank</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Rank</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Rank of the taxon. See https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7408187/#sec9title for more details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rank</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">scientific_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The unique scientific name of the taxon.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_str_attr</span><span class="p">(</span><span class="s2">&quot;scientific_name&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">common_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Common name of the taxon. In taxoniq, this is defined as the NCBI taxonomy blast name if available, or the</span>
+<span class="sd">        genbank common name if available, or the first listed common name. See</span>
+<span class="sd">        https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245000/ for definitions of these fields.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_str_attr</span><span class="p">(</span><span class="s2">&quot;common_name&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">lineage</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;List[Taxon]&#39;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Lineage for this taxon (the list of parent nodes from the taxon to the root of the taxonomic tree).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lineage</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">]</span>
+        <span class="k">while</span> <span class="n">lineage</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tax_id</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">lineage</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Taxon</span><span class="p">(</span><span class="n">lineage</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">_parent</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">lineage</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ranked_lineage</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;List[Taxon]&#39;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Lineage of main taxonomic ranks (species, genus, family, order, class, phylum, kingdom, superkingdom).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">rank</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">common_ranks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lineage</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">parent</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Union[Taxon, None]&#39;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The parent taxon for this taxon.</span>
+
+<span class="sd">        For the root of the tree, `parent` is `None`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tax_id</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Taxon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">child_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;List[Taxon]&#39;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a list of taxon objects that list this taxon as their parent.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">Taxon</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">t</span><span class="p">))</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_str_attr</span><span class="p">(</span><span class="s2">&quot;child_nodes&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ranked_child_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;List[Taxon]&#39;</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        List of child nodes in the next main taxonomic rank (species, genus, family, order, class, phylum, kingdom,</span>
+<span class="sd">        superkingdom).</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">rank</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">common_ranks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">child_nodes</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">description</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Introductory paragraph for this taxon from English Wikipedia, if available.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_str_attr</span><span class="p">(</span><span class="s2">&quot;description&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">best_available_description</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Introductory paragraph from English Wikipedia for this taxon or the first parent taxon where a description is</span>
+<span class="sd">        available.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">while</span> <span class="n">t</span><span class="o">.</span><span class="n">tax_id</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">description</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">t</span><span class="o">.</span><span class="n">description</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">parent</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">best_refseq_taxon</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Best related taxon with refseq representative genome sequence available.</span>
+<span class="sd">        For viruses, this is the RefSeq &quot;genome neighbor&quot; as defined in</span>
+<span class="sd">        https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4383986/ and retrieved from</span>
+<span class="sd">        https://ftp.ncbi.nlm.nih.gov/genomes/Viruses/Viruses_RefSeq_and_neighbors_genome_data.tab.</span>
+<span class="sd">        For other domains, this is the RefSeq representative genome for the taxon&#39;s species, if available, as</span>
+<span class="sd">        seen in the species_taxid column of https://ftp.ncbi.nlm.nih.gov/genomes/refseq/assembly_summary_refseq.txt.</span>
+
+<span class="sd">        The accessions for the genome can be accessed as follows:</span>
+
+<span class="sd">            Taxon(123).best_refseq_taxon.refseq_representative_genome_accessions</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">host</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        A text description of a symbiont host or hosts for this taxon&#39;s organism, if any.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_str_attr</span><span class="p">(</span><span class="s2">&quot;host&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">refseq_representative_genome_accessions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Accession</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A list of :class:`Accession` objects for sequences in the RefSeq representative genome assembly for this</span>
+<span class="sd">        taxon, if available.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">Accession</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_str_attr</span><span class="p">(</span><span class="s2">&quot;taxid2refrep&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">refseq_genome_accessions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Accession</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A list of :class:`Accession` objects for sequences in the most recent RefSeq genome assembly for this</span>
+<span class="sd">        taxon, if available.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">Accession</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_str_attr</span><span class="p">(</span><span class="s2">&quot;taxid2refseq&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)]</span>
+
+<div class="viewcode-block" id="Taxon.lca"><a class="viewcode-back" href="../index.html#taxoniq.Taxon.lca">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">lca</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">taxa</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given a list of Taxon objects, returns the last common ancestor taxon.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Taxon.distance"><a class="viewcode-back" href="../index.html#taxoniq.Taxon.distance">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">distance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">taxa</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Phylogenetic distance between taxa as computed by WoL</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Taxon.closest_taxon_with_refseq_genome"><a class="viewcode-back" href="../index.html#taxoniq.Taxon.closest_taxon_with_refseq_genome">[docs]</a>    <span class="k">def</span> <span class="nf">closest_taxon_with_refseq_genome</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Returns a taxon closest by phylogenetic distance as computed by WoL and with a refseq genome associated</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">pass</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the HTTPS URL for the NCBI Taxonomy web page representing this taxon.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&amp;id=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tax_id</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">wikidata_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Wikidata ID for this taxon.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">wikidata_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_db</span><span class="p">(</span><span class="s2">&quot;wikidata&quot;</span><span class="p">)[</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tax_id</span><span class="p">)][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Q</span><span class="si">{</span><span class="n">wikidata_id</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">wikidata_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        URL of the Wikidata web page representing this taxon.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wikidata_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;https://www.wikidata.org/wiki/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">wikidata_id</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tax_id</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">tax_id</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">.</span><span class="si">{}</span><span class="s2">(</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tax_id</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+            
+        </div>
+        <div class="clearfix"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">taxoniq  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">taxoniq</a></li> 
+      </ul>
+    </div>
+<script type="text/javascript">
+  $("#mobile-toggle a").click(function () {
+    $("#left-column").toggle();
+  });
+</script>
+<script type="text/javascript" src="../_static/js/bootstrap.js"></script>
+  <div class="footer">
+    &copy; Copyright CZI Foundation. Created using <a href="http://sphinx.pocoo.org/">Sphinx</a>.
+  </div>
+  </body>
+</html>
