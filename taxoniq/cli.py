@@ -79,21 +79,22 @@ def cli(args=None):
         if args.accession_id == "-":
             def fetch_seq(accession_id):
                 try:
-                    accession = Accession(accession_id)
-                    op = getattr(accession, args.operation.replace("-", "_"))
+                    acc = Accession(accession_id)
+                    op = getattr(acc, args.operation.replace("-", "_"))
                     seq = op().read()
                 except KeyError:
                     args.accession_id = accession_id
                     exit_not_found_err(args)
-                return (accession, seq)
+                return (acc, seq)
 
             with ThreadPoolExecutor() as executor:
-                for accession, seq in executor.map(fetch_seq, sys.stdin.read().splitlines()):
+                for accession, sequence in executor.map(fetch_seq, sys.stdin.read().splitlines()):
                     print(">" + accession.accession_id)
                     sys.stdout.flush()
-                    for line_start in range(0, len(seq), 64):
-                        sys.stdout.buffer.write(seq[line_start:line_start+64])
+                    for line_start in range(0, len(sequence), 64):
+                        sys.stdout.buffer.write(sequence[line_start:line_start+64])
                         sys.stdout.buffer.write(b"\n")
+                    sys.stdout.flush()
         else:
             accession = Accession(args.accession_id)
             operation = getattr(accession, args.operation.replace("-", "_"))
@@ -105,6 +106,7 @@ def cli(args=None):
                         for line_start in range(0, len(chunk), 64):
                             sys.stdout.buffer.write(chunk[line_start:line_start+64])
                             sys.stdout.buffer.write(b"\n")
+                        sys.stdout.flush()
             except KeyError:
                 exit_not_found_err(args)
     else:

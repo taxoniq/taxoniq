@@ -5,9 +5,10 @@ import sys
 import json
 import unittest
 import logging
+import contextlib
+import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from io import StringIO
-from unittest.mock import patch
 
 import taxoniq
 import taxoniq.cli
@@ -99,7 +100,21 @@ class TestTaxoniq(unittest.TestCase):
                     self.assertIn(key, doc)
 
     def test_cli(self):
-        taxoniq.cli.cli(["ranked-lineage", "--accession-id", "NC_000913.3"])
+        buf = StringIO()
+        with contextlib.redirect_stdout(buf):
+            taxoniq.cli.cli(["ranked-lineage", "--accession-id", "NC_000913.3"])
+        self.assertEqual(json.loads(buf.getvalue()), [562, 561, 543, 91347, 1236, 1224, 2])
+        in_buf = StringIO("MT729386\nMT614352\nMT502931\nMT434818")
+        tf = tempfile.NamedTemporaryFile(mode="wt")
+        with contextlib.redirect_stdout(tf):
+            try:
+                sys.stdin = in_buf
+                taxoniq.cli.cli(["get-from-s3", "--accession-id", "-"])
+            finally:
+                sys.stdin = sys.__stdin__
+        tf.flush()
+        with open(tf.name) as fh, open(os.path.join(os.path.dirname(__file__), "ref.fasta")) as ref:
+            self.assertEqual(fh.read(), ref.read())
 
 
 if __name__ == "__main__":

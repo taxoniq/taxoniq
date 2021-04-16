@@ -146,9 +146,13 @@ class Accession(DatabaseService, ItemAttrAccess):
         database mirror (https://registry.opendata.aws/ncbi-blast-databases/), if available.
         """
         blast_db = f"{self.blast_db.name}.{str(self.blast_db_volume).rjust(2, '0')}"
+        if self.blast_db.name in {"ref_viruses_rep_genomes", "Betacoronavirus"}:
+            blast_db = f"{self.blast_db.name}"
         s3_url = f"https://{self.s3_host}/{blast_db_timestamp}/{blast_db}.nsq"
         headers = {"Range": f"bytes={self.db_offset}-{self.db_offset + (self.length // 4)}"}
         res = self.http.request("GET", s3_url, headers=headers, preload_content=False)
+        if res.status // 100 != 2:
+            raise TaxoniqException(f"Error while retrieving {s3_url}: {res.status} {res.reason}")
         res._decoder = TwoBitDecoder(self.length)
         return res
 
