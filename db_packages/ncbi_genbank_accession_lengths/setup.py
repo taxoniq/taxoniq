@@ -12,7 +12,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="ncbi-genbank-accession-lengths",
-    version="2021.3.25",
+    version="2021.4.10",
     url="https://github.com/chanzuckerberg/taxoniq",
     license="MIT License",
     author="Andrey Kislyuk",
