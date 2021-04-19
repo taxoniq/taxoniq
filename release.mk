@@ -62,8 +62,7 @@ release-db-packages: check-release-deps
 	$(eval UPLOADS_API=https://uploads.github.com/repos/${REMOTE}/releases)
 	git pull
 	sed -i -e "s/20[0-9][0-9].[0-9]*.[0-9]*/$$(cat latest-dir | cut -f 1-3 -d - | sed -e 's/-/./g' -e 's/\.0/\./')/" setup.py db_packages/*/setup.py
-	$(MAKE) write-const
-	git add setup.py db_packages/*/setup.py taxoniq/const.py
+	git add setup.py db_packages/*/setup.py
 	git commit -m "Update data packages to version $$(cat latest-dir | cut -f 1-3 -d -)"
 	git push
 	-rm -rf db_packages/*/build db_packages/*/dist
