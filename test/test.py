@@ -65,8 +65,20 @@ class TestTaxoniq(unittest.TestCase):
             assert seq.endswith(b"AATGTTGCACCGTTTGCTGCATGATATTGAAAAAAATATCACCAAATAAAAAACGCCTTAGTAAGTATTTTTC"), \
                 f"Unexpected sequence end {seq[-64:]}"
             self.assertEqual(fh.read(), b"")
+            self.assertEqual(len(seq), a.length)
         with a.get_from_s3() as fh:
             self.assertEqual(fh.read(1), b"AGCT")
+
+        a2 = taxoniq.Accession(accession_id="MT502931")
+        a3 = taxoniq.Accession(accession_id="MT502931.1")
+        with a2.get_from_s3() as fh2, a3.get_from_s3() as fh3:
+            seq2, seq3 = fh2.read(), fh3.read()
+            self.assertEqual(len(seq2), 357)
+            self.assertEqual(len(seq3), 357)
+            self.assertEqual(len(seq3), a2.length)
+            self.assertEqual(len(seq3), a3.length)
+            assert seq2.startswith(b"ACTTGTGTTCCTTTTTGTTGCTGCTATTTTCTATTTAATAACACCTGTTCATGTCATGTCTAAACATACTGACTTTTCAAG")
+            assert seq2.endswith(b"TTGCCTGGCACGATATTACGCACAACTAATGGTGACTTTTTGCATTTCTTACCTAGAGTTTTTAGTGCAGTTGGTAACATCTG")
 
     @unittest.skipIf("CI" in os.environ, "Skippinng test that requires eukaryotic database")
     def test_eukaryote_accession_interface(self):

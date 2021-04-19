@@ -10,6 +10,9 @@ version: taxoniq/version.py
 taxoniq/version.py: setup.py
 	echo "__version__ = '$$(python3 setup.py --version)'" > $@
 
+get-wikipedia-extracts:
+	python3 -m taxoniq.build wikipedia-extracts
+
 build-vendored-deps:
 	cython -3 marisa-trie/src/*.pyx marisa-trie/src/*.pxd --cplus
 	python3 setup.py build_clib
@@ -21,11 +24,11 @@ build: version build-vendored-deps
 	mkdir -p $(BLASTDB)
 	aws s3 cp --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/latest-dir .
 ifdef BLAST_DATABASES
-	aws s3 sync --quiet --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/$$(cat latest-dir)/ $(BLASTDB)/ --exclude "*" $$(for db in $(BLAST_DATABASES); do echo --include "$$db*[!q]"; done)
+	aws s3 sync --quiet --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/$$(cat latest-dir)/ $(BLASTDB)/ --exclude "*" $$(for db in $(BLAST_DATABASES); do echo --include "$$db*"; done)
 else
-	aws s3 sync --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/$$(cat latest-dir)/ $(BLASTDB)/ --exclude "*.nsq" --exclude "*.p*" --exclude "env_*" --exclude "patnt*" --exclude "refseq_rna*"
+	aws s3 sync --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/$$(cat latest-dir)/ $(BLASTDB)/ --exclude "*.p*" --exclude "env_*" --exclude "patnt*" --exclude "refseq_rna*"
 endif
-	python3 -m taxoniq.build
+	python3 -m taxoniq.build trees
 	if [[ $$CI ]]; then rm -rf $(BLASTDB); fi
 
 lint:

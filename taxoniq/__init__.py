@@ -20,8 +20,7 @@ try:
 except ImportError:
     import ncbi_refseq_accession_offsets as accession_offsets
 
-from .const import blast_db_timestamp
-from .util import TwoBitDecoder
+from .util import NcbiNa2Decoder
 from .version import __version__  # noqa
 from .vendored.marisa_trie import RecordTrie
 
@@ -148,12 +147,12 @@ class Accession(DatabaseService, ItemAttrAccess):
         blast_db = f"{self.blast_db.name}.{str(self.blast_db_volume).rjust(2, '0')}"
         if self.blast_db.name in {"ref_viruses_rep_genomes", "Betacoronavirus"}:
             blast_db = f"{self.blast_db.name}"
-        s3_url = f"https://{self.s3_host}/{blast_db_timestamp}/{blast_db}.nsq"
+        s3_url = f"https://{self.s3_host}/{accession_db.db_timestamp}/{blast_db}.nsq"
         headers = {"Range": f"bytes={self.db_offset}-{self.db_offset + (self.length // 4)}"}
         res = self.http.request("GET", s3_url, headers=headers, preload_content=False)
         if res.status // 100 != 2:
             raise TaxoniqException(f"Error while retrieving {s3_url}: {res.status} {res.reason}")
-        res._decoder = TwoBitDecoder(self.length)
+        res._decoder = NcbiNa2Decoder(self.length)
         return res
 
     def get_from_gs(self):
