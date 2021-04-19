@@ -1,3 +1,12 @@
+Changes for v0.6.0 (2021-04-19)
+===============================
+
+-  Fix BLAST sequence DB trailing byte handling, timestamping
+
+-  Fix sequence retrieval for single-volume databases
+
+-  Update data packages to version 2021-04-10
+
 Changes for v0.5.2 (2021-04-14)
 ===============================
 
