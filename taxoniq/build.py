@@ -273,26 +273,29 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
             (acc_info["tax_id"], ((BLASTDatabase[acc_info["db_name"]].value << 8) + acc_info["volume_id"]))
         )
 
-    def db_path(db_name):
+    def db_path(db_name, filename="db.marisa"):
         ncbi_db_name = "genbank" if "nt" in blast_databases else "refseq"
         db_package = f"ncbi_{ncbi_db_name}_{db_name}"
-        return os.path.join(db_packages_dir, db_package, db_package, "db.marisa")
+        return os.path.join(db_packages_dir, db_package, db_package, filename)
+
+    def write_index_version(db_name):
+        with open("latest-dir") as ts, open(db_path(db_name, filename="version.py"), "w") as fh:
+            fh.write(f"db_timestamp = '{ts.read().strip()}'")
 
     t = RecordTrie("IH", load_accession_data(acc_xform))
     t.save(db_path("accession_db"))
+    write_index_version("accession_db")
     logger.info("Completed writing %s", db_path("accession_db"))
     t = RecordTrie("I", load_accession_data(lambda d: (d["packed_id"], (d["offset"], ))))
     t.save(db_path("accession_offsets"))
+    write_index_version("accession_offsets")
     logger.info("Completed writing %s", db_path("accession_offsets"))
     t = RecordTrie("I", load_accession_data(lambda d: (d["packed_id"], (d["length"], ))))
     t.save(db_path("accession_lengths"))
+    write_index_version("accession_lengths")
     logger.info("Completed writing %s", db_path("accession_lengths"))
     write_taxid_to_string_index(mapping=[(tid, ",".join(acc)) for tid, acc in taxid2refrep.items()],
                                 index_name="taxid2refrep", destdir=destdir)
-
-    # FIXME: write source timestamps to db packages
-    # "db_timestamp = '$$(cat latest-dir)'" > db_packages/ncbi_refseq_accession_db/ncbi_refseq_accession_db/const.py
-    # "db_timestamp = '$$(stat --format %Y nodes.dmp)'" > db_packages/ncbi_taxon_db/ncbi_taxon_db/const.py
 
     # FIXME: if we include non-rep refseq accessions, we should index those accessions' positions in nt
     taxid2refseq = index_refseq_accessions(destdir=destdir)
@@ -311,6 +314,8 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
     t = RecordTrie("I", [(sn, (tid, )) for sn, tid in sn2taxid.items()])
     t.save(os.path.join(destdir, "sn2taxid.marisa"))
     write_taxid_to_string_index(mapping=load_common_names(names), index_name="common_name", destdir=destdir)
+    with open(os.path.join(destdir, "version.py"), "w") as fh:
+        fh.write(f"db_timestamp = {int(os.stat('nodes.dmp').st_mtime)}")
 
 
 def process_assembly_report(assembly_summary):
@@ -372,6 +377,37 @@ def index_refseq_accessions(destdir):
 
 
 def load_accession_info_from_blast_db(db_name):
+    """
+    ncbi-blast-2.9.0+/c++/src/objtools/blast/seqdb_reader/sequence_files.txt:
+
+    The nucleotide data is stored in packed NcbiNa2 format.  This format
+    uses two bits for each nucleotide base (letter), using the values A=0,
+    C=1, G=2, and T=3.  Four such values are stored in each byte.  The
+    bases are stored in each byte starting at the most significant bits,
+    and proceding down to the least significant.  For example, bases TACG
+    are encoded as 3,0,1,2, and then (3 << 6) + (1 << 2) + 2, yielding an
+    (unsigned) byte value of 198.
+
+    To find the number of bytes used to store a nucleotide sequence, the
+    end point (as a byte offset) is subtracted from the starting point.
+    Since nucleotide sequences are packed four bases per byte, this must
+    be multiplied by four to get the sequence length in bases.
+
+    But this technique does not tell us the exact length -- to find the
+    exact length, we need to know how many of the bases in the last byte
+    are part of the sequence.  BlastDB solves this problem by using the
+    last base of the last byte to store a number from 0-3; this is the
+    "remainder", a count of how many of the bases in the last byte are
+    part of the sequence.  If a sequence is exactly divisible by four, an
+    additional byte must be appended to contain this count (which will be
+    zero.)  For the sequence (TACG), the full byte encoding is (225, 0).
+
+    Another example: The sequence TGGTTACAAC would first be broken into
+    byte sized chunks (TGGT,TACA,AC).  Each base is encoded numerically,
+    (3223,3010,01).  The last byte only contains 2 bases, so it is padded
+    with a zero base and the remainder (2), yielding (3223,3010,0102).  In
+    decimal this is 235, 196, and 18, or in hexadecimal, (EB, C4, 12).
+    """
     accessions, db_volumes = {}, []
     for line in subprocess.check_output(['blastdbcmd', '-list', os.environ["BLASTDB"]]).decode().splitlines():
         db_path, db_type = line.strip().split()
@@ -438,11 +474,18 @@ def assembly_sort_key(assembly):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    if "BLAST_DATABASES" in os.environ:
-        build_trees()
+    if len(sys.argv) != 2:
+        exit(f"Usage: {os.path.basename(__file__)} (trees|wikipedia_extracts)")
+    if sys.argv[1] == "trees":
+        if "BLAST_DATABASES" in os.environ:
+            build_trees()
+        else:
+            build_trees(blast_databases=[db.name for db in BLASTDatabase if db.name not in {"nt", "nr"}])
+            build_trees(blast_databases=[db.name for db in BLASTDatabase])
+    elif sys.argv[1] == "wikipedia-extracts":
+        WikipediaDescriptionClient().build_index(destdir=os.path.join(os.path.dirname(__file__), ".."))
     else:
-        build_trees(blast_databases=[db.name for db in BLASTDatabase if db.name not in {"nt", "nr"}])
-        build_trees(blast_databases=[db.name for db in BLASTDatabase])
+        raise Exception("Unknown command")
 
 # TODO: load WoL tree distance information
 # TODO: load virus host and refseq data (Viruses_RefSeq_and_neighbors_genome_data.tab)

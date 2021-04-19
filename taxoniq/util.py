@@ -15,7 +15,8 @@ twobit2ascii = {0: b"A", 1: b"C", 2: b"G", 3: b"T"}
 twobit2ascii_byte_lut = {x: byte_to_bases(x) for x in range(256)}
 
 
-class TwoBitDecoder:
+class NcbiNa2Decoder:
+    # See ncbi-blast-2.9.0+-src/c++/src/objtools/blast/seqdb_reader/sequence_files.txt
     def __init__(self, length):
         self.length = length
         self.bases_seen = 0
@@ -32,3 +33,8 @@ class TwoBitDecoder:
 
     def flush(self) -> bytes:
         return b''
+
+
+class NcbistdaaDecoder:
+    # See ncbi-blast-2.9.0+-src/c++/src/objtools/blast/seqdb_reader/sequence_files.txt
+    pass

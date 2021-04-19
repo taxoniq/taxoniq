@@ -12,10 +12,7 @@ import logging
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 
-# FIXME: update db timestamps to use db packages
-# from . import Taxon, Accession, ncbi_taxon_db, ncbi_accession_db, __version__
-from . import Taxon, Accession, __version__
-from .const import taxon_db_timestamp, blast_db_timestamp
+from . import Taxon, Accession, ncbi_taxon_db, accession_db, __version__
 
 
 def print_json(data, output_format):
@@ -31,7 +28,7 @@ def print_json(data, output_format):
 
 
 def get_version():
-    return f"Taxoniq {__version__}\nTaxonomy DB: {taxon_db_timestamp}\nBLAST DB: {blast_db_timestamp}"
+    return f"Taxoniq {__version__}\nTaxonomy DB: {ncbi_taxon_db.db_timestamp}\nBLAST DB: {accession_db.db_timestamp}"
 
 
 class TaxoniqHelpFormatter(argparse.RawTextHelpFormatter):

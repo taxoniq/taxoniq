@@ -50,6 +50,7 @@ class TestTaxoniq(unittest.TestCase):
                                             taxoniq.Taxon(scientific_name='Hominidae'),
                                             taxoniq.Taxon(scientific_name='Primates'),
                                             taxoniq.Taxon(scientific_name='Mammalia'),
+                                            taxoniq.Taxon(scientific_name='Dipnotetrapodomorpha'),
                                             taxoniq.Taxon(scientific_name='Chordata'),
                                             taxoniq.Taxon(scientific_name='Metazoa'),
                                             taxoniq.Taxon(scientific_name='Eukaryota')])
@@ -65,16 +66,28 @@ class TestTaxoniq(unittest.TestCase):
             assert seq.endswith(b"AATGTTGCACCGTTTGCTGCATGATATTGAAAAAAATATCACCAAATAAAAAACGCCTTAGTAAGTATTTTTC"), \
                 f"Unexpected sequence end {seq[-64:]}"
             self.assertEqual(fh.read(), b"")
+            self.assertEqual(len(seq), a.length)
         with a.get_from_s3() as fh:
             self.assertEqual(fh.read(1), b"AGCT")
+
+        a2 = taxoniq.Accession(accession_id="MT502931")
+        a3 = taxoniq.Accession(accession_id="MT502931.1")
+        with a2.get_from_s3() as fh2, a3.get_from_s3() as fh3:
+            seq2, seq3 = fh2.read(), fh3.read()
+            self.assertEqual(len(seq2), 357)
+            self.assertEqual(len(seq3), 357)
+            self.assertEqual(len(seq3), a2.length)
+            self.assertEqual(len(seq3), a3.length)
+            assert seq2.startswith(b"ACTTGTGTTCCTTTTTGTTGCTGCTATTTTCTATTTAATAACACCTGTTCATGTCATGTCTAAACATACTGACTTTTCAAG")
+            assert seq2.endswith(b"TTGCCTGGCACGATATTACGCACAACTAATGGTGACTTTTTGCATTTCTTACCTAGAGTTTTTAGTGCAGTTGGTAACATCTG")
 
     @unittest.skipIf("CI" in os.environ, "Skippinng test that requires eukaryotic database")
     def test_eukaryote_accession_interface(self):
         a = taxoniq.Accession(accession_id="NC_000001.11")
-        self.assertEqual(a.length, 248956420)
+        self.assertEqual(a.length, 248956422)
         self.assertEqual(a.tax_id, 9606)
         a = taxoniq.Accession(accession_id="NZ_CP019573.1")
-        self.assertEqual(a.length, 1745788)
+        self.assertEqual(a.length, 1745789)
         self.assertEqual(a.tax_id, 1817405)
 
     def test_refseq_index(self):
@@ -100,6 +113,7 @@ class TestTaxoniq(unittest.TestCase):
                     self.assertIn(key, doc)
 
     def test_cli(self):
+        self.maxDiff=None
         buf = StringIO()
         with contextlib.redirect_stdout(buf):
             taxoniq.cli.cli(["ranked-lineage", "--accession-id", "NC_000913.3"])
