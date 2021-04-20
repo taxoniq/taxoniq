@@ -113,7 +113,6 @@ class TestTaxoniq(unittest.TestCase):
                     self.assertIn(key, doc)
 
     def test_cli(self):
-        self.maxDiff=None
         buf = StringIO()
         with contextlib.redirect_stdout(buf):
             taxoniq.cli.cli(["ranked-lineage", "--accession-id", "NC_000913.3"])
