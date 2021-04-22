@@ -61,7 +61,7 @@ class WikipediaDescriptionClient:
                 break
             params.update(res_doc["continue"])
 
-    def get_extracts(self, titles, domain="en.wikipedia.org", extract_chars=1000):
+    def get_extracts(self, titles, domain="en.wikipedia.org", extract_chars=9000):
         assert len(titles) <= 20
         params = dict(action="query", prop="extracts", exintro=True, exchars=extract_chars, format="json",
                       titles="|".join(titles))
