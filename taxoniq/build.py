@@ -415,10 +415,6 @@ def load_accession_info_from_blast_db(db_name):
         db_path = db_path[len(os.environ["BLASTDB"]):].lstrip("/")
         if db_path == db_name or db_path.startswith(db_name + "."):
             db_volumes.append(os.path.join(os.environ["BLASTDB"], db_path))
-            # Create a placeholder sparse file for nsq (sequence data) so blastdbcmd won't complain about it missing
-            subprocess.run(
-                ["dd", "if=/dev/zero", f"of={db_volumes[-1]}.nsq", "bs=1", "count=0", "seek=8G", "status=none"]
-            )
 
     for db_volume in db_volumes:
         logger.info("Processing BLAST db volume %s", db_volume)
