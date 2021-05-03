@@ -219,7 +219,7 @@ In progress
 
 ## Links
 * [Project home page (GitHub)](https://github.com/chanzuckerberg/taxoniq)
-* [Documentation](https://chanzuckerberg.github.io/taxoniq/)
+* [Documentation](https://taxoniq.github.io/taxoniq/)
 * [Package distribution (PyPI)](https://pypi.python.org/pypi/taxoniq)
 * [Change log](https://github.com/chanzuckerberg/taxoniq/blob/master/Changes.rst)
 * [ETE Toolkit](http://etetoolkit.org/) and the [ETE Tutorial](http://etetoolkit.org/docs/latest/tutorial/index.html) - a general purpose
