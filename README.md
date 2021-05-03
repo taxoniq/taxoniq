@@ -12,7 +12,7 @@ Taxoniq's features include:
   (separately, Taxoniq can fetch the nucleotide or protein sequences over the network given a taxon or sequence
   accession ID - see **Retrieving sequences** below)
 - A CLI capable of JSON I/O, batch processing and streaming of inputs for ease of use and pipelining in shell scripts
-- A stable, [well-documented](https://chanzuckerberg.github.io/taxoniq/#module-taxoniq), type-hinted Python API
+- A stable, [well-documented](https://taxoniq.github.io/taxoniq/#module-taxoniq), type-hinted Python API
   (Python 3.6 and higher is supported)
 - Comprehensive testing and continuous integration
 - An intuitive interface with useful defaults
@@ -25,7 +25,7 @@ each taxon, the [WoL](https://biocore.github.io/wol/) kingdom-wide phylogenomic 
 information from other databases. Sequence accession IDs which appear in the NCBI RefSeq BLAST databases are indexed so
 that given a taxon ID, accession ID, or taxon name, you can quickly retrieve the taxon's rank, lineage, description,
 citations, representative RefSeq IDs, LCA information, evolutionary distance, sequence (with a network call), and more,
-as described in the **Cookbook** section below. Full [API documentation](https://chanzuckerberg.github.io/taxoniq/#module-taxoniq)
+as described in the **Cookbook** section below. Full [API documentation](https://taxoniq.github.io/taxoniq/#module-taxoniq)
 is available.
 
 ## Installation
@@ -190,7 +190,7 @@ To retrieve multiple sequences in FASTA format, use `--accession-id -` and pass 
 Because of their size, taxoniq wheels with indexes of the NT (GenBank Non-redundant nucleotide) BLAST database are
 distributed on GitHub instead of PyPI. After running `pip3 install taxoniq`, you can install the NT indexes as follows:
 
-- Navigate to https://github.com/chanzuckerberg/taxoniq/releases/latest
+- Navigate to https://github.com/taxoniq/taxoniq/releases/latest
 - In the "Assets" section, for each link that starts with "ncbi_genbank" and ends with ".whl":
   - Right-click on the asset link, and click "Copy link address"
   - Run `pip3 install --upgrade <PASTED LINK ADDRESS>`
@@ -218,10 +218,10 @@ kraken2 --paired nohuman_1.fastq nohuman_2.fastq --classified-out 'classified#.f
 In progress
 
 ## Links
-* [Project home page (GitHub)](https://github.com/chanzuckerberg/taxoniq)
+* [Project home page (GitHub)](https://github.com/taxoniq/taxoniq)
 * [Documentation](https://taxoniq.github.io/taxoniq/)
 * [Package distribution (PyPI)](https://pypi.python.org/pypi/taxoniq)
-* [Change log](https://github.com/chanzuckerberg/taxoniq/blob/master/Changes.rst)
+* [Change log](https://github.com/taxoniq/taxoniq/blob/master/Changes.rst)
 * [ETE Toolkit](http://etetoolkit.org/) and the [ETE Tutorial](http://etetoolkit.org/docs/latest/tutorial/index.html) - a general purpose
   phylogenetic tree toolkit with a rich Python interface
 
@@ -237,4 +237,4 @@ Distributions of this package contain text excerpts from Wikipedia licensed unde
 [CC-BY-SA License](LICENSE.WIKIPEDIA).
 
 ## Bugs
-Please report bugs, issues, feature requests, etc. on [GitHub](https://github.com/chanzuckerberg/taxoniq/issues).
+Please report bugs, issues, feature requests, etc. on [GitHub](https://github.com/taxoniq/taxoniq/issues).
