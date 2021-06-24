@@ -14,6 +14,8 @@ get-wikipedia-extracts:
 	python3 -m taxoniq.build wikipedia-extracts
 
 build-vendored-deps:
+	if [[ ! -d marisa-trie/marisa-trie ]]; then git submodule update --init --recursive; fi
+	pip3 install cython
 	cython -3 marisa-trie/src/*.pyx marisa-trie/src/*.pxd --cplus
 	python3 setup.py build_clib
 	python3 setup.py build_ext --inplace
