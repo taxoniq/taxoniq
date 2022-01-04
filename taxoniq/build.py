@@ -320,7 +320,7 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
 
 def process_assembly_report(assembly_summary):
     ftp_path = assembly_summary["ftp_path"]
-    assembly_report_url = f"{ftp_path.replace('ftp', 'https', 1)}/{os.path.basename(ftp_path)}_assembly_report.txt"
+    assembly_report_url = f"{ftp_path}/{os.path.basename(ftp_path)}_assembly_report.txt"
     assembly_report_fields = ("sequence_name", "sequence_role", "assigned_molecule", "assigned_molecule_location_type",
                               "genbank_accn", "relationship", "refseq_accn", "assembly_unit", "sequence_length",
                               "ucsc_style_name")

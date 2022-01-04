@@ -21,6 +21,8 @@ build-vendored-deps:
 	python3 setup.py build_ext --inplace
 
 build: version build-vendored-deps
+	if ! type blastdbcmd; then sudo apt-get install ncbi-blast+; fi
+	if [[ ! -e wikipedia_extracts.json ]]; then $(MAKE) get-wikipedia-extracts; fi
 	pip3 install --upgrade awscli zstandard urllib3 db_packages/ncbi_taxon_db db_packages/ncbi_refseq_accession_*
 	if [[ ! -f nodes.dmp ]] || [[ $$(($$(date +%s) - $$(stat --format %Y nodes.dmp))) -gt $$((60*60*24)) ]]; then curl $(TAXDUMP_URL) | tar -xvz; fi
 	mkdir -p $(BLASTDB)
