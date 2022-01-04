@@ -5,6 +5,7 @@ import json
 import logging
 import io
 import struct
+import warnings
 from concurrent.futures import ThreadPoolExecutor
 from collections import defaultdict
 from hashlib import sha256
@@ -324,17 +325,19 @@ def process_assembly_report(assembly_summary):
     assembly_report_fields = ("sequence_name", "sequence_role", "assigned_molecule", "assigned_molecule_location_type",
                               "genbank_accn", "relationship", "refseq_accn", "assembly_unit", "sequence_length",
                               "ucsc_style_name")
-
     molecules = []
-    with open(fetch_file(assembly_report_url)) as assembly_report:
-        for line in assembly_report:
-            if line.startswith("#"):
-                continue
-            molecule_summary = dict(zip(assembly_report_fields, line.strip().split("\t")))
-            if molecule_summary["sequence_role"] != "assembled-molecule":
-                continue
-            molecule_summary.update(assembly_summary)
-            molecules.append(molecule_summary)
+    if ftp_path.startswith("https://ftp.ncbi.nlm.nih.gov"):
+        with open(fetch_file(assembly_report_url)) as assembly_report:
+            for line in assembly_report:
+                if line.startswith("#"):
+                    continue
+                molecule_summary = dict(zip(assembly_report_fields, line.strip().split("\t")))
+                if molecule_summary["sequence_role"] != "assembled-molecule":
+                    continue
+                molecule_summary.update(assembly_summary)
+                molecules.append(molecule_summary)
+    else:
+        warnings.warn(f"Invalid assembly summary: {assembly_summary}")
     return molecules
 
 
