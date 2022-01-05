@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 env:
   BLASTDB: blast-db
-  BLAST_DATABASES: "ref_viruses_rep_genomes ref_prok_rep_genomes Betacoronavirus"
+  BLAST_DATABASES: "ref_viruses_rep_genomes ref_prok_rep_genomes"
   FETCH_REFSEQ_ASSEMBLIES: "Mumps orthorubulavirus"
 
 jobs:
