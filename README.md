@@ -73,17 +73,19 @@ pre-built wheels (you can check your version with `pip3 --version` and upgrade w
 ```
 >>> t2 = taxoniq.Taxon(scientific_name="Bacillus anthracis")
 >>> t2.description
-'<p class="mw-empty-elt"> </p> <p class="mw-empty-elt"> </p> <p><i><b>Bacillus anthracis</b></i>
- is the agent of anthrax—a common disease of livestock and, occasionally, of humans—and the only
- obligate pathogen within the genus <i>Bacillus</i>. This disease can be classified as a zoonosis,
- causing infected animals to transmit the disease to humans. <i>B. anthracis</i> is a Gram-positive,
- endospore-forming, rod-shaped bacterium, with a width of 1.0–1.2 µm and a length of 3–5&#160;µm.
- It can be grown in an ordinary nutrient medium under aerobic or anaerobic conditions.</p>
- <p>It is one of few bacteria known to synthesize a protein capsule (poly-D-gamma-glutamic acid).
- Like <i>Bordetella pertussis</i>, it forms a calmodulin-dependent adenylate cyclase exotoxin known
- as anthrax edema factor, along with anthrax lethal factor. It bears close genotypic and phenotypic
- resemblance to <i>Bacillus cereus</i> and <i>Bacillus thuringiensis</i>. All three species share
- cellular dimensions and morphology</p>...'
+'<p class="mw-empty-elt"> </p> <p><i><b>Bacillus anthracis</b></i> is a Gram-positive and
+ rod-shaped bacterium that causes anthrax, a deadly disease to livestock and, occasionally, to
+ humans. It is the only permanent (obligate) pathogen within the genus <i>Bacillus</i>. Its
+ infection is a type of zoonosis, as it is transmitted from animals to humans. It was discovered
+ by a German physician Robert Koch in 1876, and became the first bacterium to be experimentally
+ shown as a pathogen. The discovery was also the first scientific evidence for the germ theory
+ of diseases.</p><p><i>B. anthracis</i> measures about 3 to 5 μm long and 1 to 1.2 μm wide, and
+ has a genome of 5,227,293 bp in a single circular DNA. It has two extrachromosal DNA plasmids,
+ pXO1 and pXO2, which are responsible for the pathogenicity. It forms a protective layer called
+ endospore by which it can remain inactive for many years and suddenly becomes infective under
+ suitable environmental conditions. Because of the resilience of the endospore, the bacterium is
+ one of the most popular biological weapons. The protein capsule (poly-D-gamma-glutamic acid) is
+ key to evasion of the immune response. It feeds on the heme of blood protein</p>...'
 ```
 
 ```python
