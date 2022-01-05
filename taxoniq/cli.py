@@ -6,6 +6,7 @@ Run "taxoniq COMMAND --help" for command-specific usage and options.
 If an error occurs, Taxoniq will exit with code 4 when the error is due to a missing taxon or accession ID,
 or code 1 for all other errors.
 """
+import os
 import sys
 import json
 import logging
@@ -28,7 +29,9 @@ def print_json(data, output_format):
 
 
 def get_version():
-    return f"Taxoniq {__version__}\nTaxonomy DB: {ncbi_taxon_db.db_timestamp}\nBLAST DB: {accession_db.db_timestamp}"
+    return (f"Taxoniq {__version__}\n"
+            f"Taxonomy DB: {ncbi_taxon_db.db_timestamp} ({os.path.dirname(ncbi_taxon_db.__file__)})\n"
+            f"BLAST DB: {accession_db.db_timestamp} ({os.path.dirname(accession_db.__file__)})")
 
 
 class TaxoniqHelpFormatter(argparse.RawTextHelpFormatter):
