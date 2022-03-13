@@ -202,7 +202,7 @@ class Taxon(DatabaseService, ItemAttrAccess):
         if sum(x is not None for x in (tax_id, accession_id, scientific_name)) != 1:
             raise TaxoniqException("Expected exactly one of tax_id, accession_id, or scientific_name to be set")
         if tax_id is not None:
-            self.tax_id = tax_id
+            self.tax_id = int(tax_id)
         elif accession_id is not None:
             self.tax_id = Accession(accession_id).tax_id
         elif scientific_name is not None:
