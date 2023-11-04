@@ -73,7 +73,7 @@ class WikipediaDescriptionClient:
         for page in res_doc["query"]["pages"].values():
             if page["ns"] == 0 and "extract" in page and "title" in page:
                 page["extract"] = re.sub(r'<p class="mw-empty-elt">.+?</p>', '', page["extract"], flags=re.DOTALL)
-                page["extract"] = re.sub(r'\s*<!--.+', '', p["extract"], flags=re.DOTALL)
+                page["extract"] = re.sub(r'\s*<!--.+', '', page["extract"], flags=re.DOTALL)
                 yield page
             else:
                 logger.error("Error retrieving extract: %s", page)
