@@ -4,6 +4,7 @@ import subprocess
 import json
 import logging
 import io
+import re
 import struct
 import warnings
 from concurrent.futures import ThreadPoolExecutor
