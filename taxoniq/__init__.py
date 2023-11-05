@@ -26,15 +26,18 @@ from .vendored.marisa_trie import RecordTrie
 
 Rank = Enum(
     "Rank",
-    ("biotype clade class cohort family forma forma_specialis genotype genus infraclass infraorder isolate kingdom "
-     "morph order parvorder pathogroup phylum section series serogroup serotype species species_group species_subgroup "
-     "strain subclass subcohort subfamily subgenus subkingdom suborder subphylum subsection subspecies subtribe "
-     "subvariety superclass superfamily superkingdom superorder superphylum tribe varietas no_rank")
+    (
+        "biotype clade class cohort family forma forma_specialis genotype genus infraclass infraorder isolate kingdom "
+        "morph order parvorder pathogroup phylum section series serogroup serotype species species_group species_subgroup "
+        "strain subclass subcohort subfamily subgenus subkingdom suborder subphylum subsection subspecies subtribe "
+        "subvariety superclass superfamily superkingdom superorder superphylum tribe varietas no_rank"
+    ),
 )
 
 
-BLASTDatabase = Enum("BLASTDatabase",
-                     ("ref_viruses_rep_genomes ref_prok_rep_genomes ref_euk_rep_genomes Betacoronavirus nt"))
+BLASTDatabase = Enum(
+    "BLASTDatabase", ("ref_viruses_rep_genomes ref_prok_rep_genomes ref_euk_rep_genomes Betacoronavirus nt")
+)
 
 
 class TaxoniqException(Exception):
@@ -69,10 +72,11 @@ class Accession(DatabaseService, ItemAttrAccess):
     An object representing an NCBI GenBank nucleotide or protein sequence accession ID.
     This is used by Taxoniq to represent sequences associated with taxons; use :class:`Taxon` as the starting point.
     """
+
     _db_files = {
         "accessions": (RecordTrie("IH"), accession_db.db),
         "accession_offsets": (RecordTrie("I"), accession_offsets.db),
-        "accession_lengths": (RecordTrie("I"), accession_lengths.db)
+        "accession_lengths": (RecordTrie("I"), accession_lengths.db),
     }
     http = urllib3.PoolManager(maxsize=min(32, os.cpu_count() + 4))
     s3_host = "ncbi-blast-databases.s3.amazonaws.com"
@@ -86,7 +90,7 @@ class Accession(DatabaseService, ItemAttrAccess):
     def _load_accession_data(self):
         self._tax_id, db_info = self._get_db("accessions")[self._packed_id][0]
         self._blast_db = BLASTDatabase(db_info >> 8)
-        self._blast_db_volume = db_info & 0xff
+        self._blast_db_volume = db_info & 0xFF
 
     @property
     def tax_id(self):
@@ -135,7 +139,7 @@ class Accession(DatabaseService, ItemAttrAccess):
 
     def _pack_id(self, accession_id):
         if accession_id.endswith(".1"):
-            accession_id = accession_id[:-len(".1")]
+            accession_id = accession_id[: -len(".1")]
         accession_id = accession_id.replace("_", "")
         return accession_id
 
@@ -181,6 +185,7 @@ class Taxon(DatabaseService, ItemAttrAccess):
     uniquely identifying a taxon using the numeric taxon ID, an alphanumeric accession ID of a sequence associated with
     the taxon ID, or the scientific name of the taxon.
     """
+
     # TODO: more attributes from structured metadata at species/strain level e.g. gc, ploidy, ...
     _db_dir = ncbi_taxon_db.db_dir
     _db_files = {
@@ -188,8 +193,16 @@ class Taxon(DatabaseService, ItemAttrAccess):
         "wikidata": (RecordTrie("I"), os.path.join(_db_dir, "wikidata.marisa")),
         "sn2t": (RecordTrie("I"), os.path.join(_db_dir, "sn2taxid.marisa")),
     }
-    _string_index_names = ("scientific_name", "common_name", "taxid2refrep", "taxid2refseq", "description",
-                           "en_wiki_title", "child_nodes", "host")
+    _string_index_names = (
+        "scientific_name",
+        "common_name",
+        "taxid2refrep",
+        "taxid2refseq",
+        "description",
+        "en_wiki_title",
+        "child_nodes",
+        "host",
+    )
     for _string_index in _string_index_names:
         _db_files[_string_index] = (zstandard, os.path.join(_db_dir, _string_index + ".zstd"))
         _db_files[_string_index + "_pos"] = (RecordTrie("I"), os.path.join(_db_dir, _string_index + ".marisa"))
@@ -219,7 +232,7 @@ class Taxon(DatabaseService, ItemAttrAccess):
                 pos = pos_db[str(self.tax_id)][0][0]
             except KeyError:
                 raise NoValue(f'The taxon {self} has no value indexed for "{attr_name}"')
-            self._str_attr_cache[attr_name] = str_db[pos:str_db.index(b"\n", pos)].decode()
+            self._str_attr_cache[attr_name] = str_db[pos : str_db.index(b"\n", pos)].decode()
         return self._str_attr_cache[attr_name]
 
     @property
@@ -238,15 +251,15 @@ class Taxon(DatabaseService, ItemAttrAccess):
 
     @property
     def common_name(self) -> str:
-        '''
+        """
         Common name of the taxon. In taxoniq, this is defined as the NCBI taxonomy blast name if available, or the
         genbank common name if available, or the first listed common name. See
         https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245000/ for definitions of these fields.
-        '''
+        """
         return self._get_str_attr("common_name")
 
     @property
-    def lineage(self) -> 'List[Taxon]':
+    def lineage(self) -> "List[Taxon]":
         """
         Lineage for this taxon (the list of parent nodes from the taxon to the root of the taxonomic tree).
         """
@@ -256,14 +269,14 @@ class Taxon(DatabaseService, ItemAttrAccess):
         return lineage
 
     @property
-    def ranked_lineage(self) -> 'List[Taxon]':
+    def ranked_lineage(self) -> "List[Taxon]":
         """
         Lineage of main taxonomic ranks (species, genus, family, order, class, phylum, kingdom, superkingdom).
         """
         return list(filter(lambda t: t.rank in self.common_ranks, self.lineage))
 
     @property
-    def parent(self) -> 'Union[Taxon, None]':
+    def parent(self) -> "Union[Taxon, None]":
         """
         The parent taxon for this taxon.
 
@@ -275,25 +288,25 @@ class Taxon(DatabaseService, ItemAttrAccess):
             return Taxon(self._parent)
 
     @property
-    def child_nodes(self) -> 'List[Taxon]':
+    def child_nodes(self) -> "List[Taxon]":
         """
         Returns a list of taxon objects that list this taxon as their parent.
         """
         return [Taxon(int(t)) for t in self._get_str_attr("child_nodes").split(",")]
 
     @property
-    def ranked_child_nodes(self) -> 'List[Taxon]':
-        '''
+    def ranked_child_nodes(self) -> "List[Taxon]":
+        """
         List of child nodes in the next main taxonomic rank (species, genus, family, order, class, phylum, kingdom,
         superkingdom).
-        '''
+        """
         return list(filter(lambda t: t.rank in self.common_ranks, self.child_nodes))
 
     @property
     def description(self) -> str:
-        '''
+        """
         Introductory paragraph for this taxon from English Wikipedia, if available.
-        '''
+        """
         try:
             return self._get_str_attr("description")
         except KeyError:
@@ -301,10 +314,10 @@ class Taxon(DatabaseService, ItemAttrAccess):
 
     @property
     def best_available_description(self):
-        '''
+        """
         Introductory paragraph from English Wikipedia for this taxon or the first parent taxon where a description is
         available.
-        '''
+        """
         t = self
         while t.tax_id != 1:
             if t.description:
@@ -314,7 +327,7 @@ class Taxon(DatabaseService, ItemAttrAccess):
 
     @property
     def best_refseq_taxon(self):
-        '''
+        """
         Best related taxon with refseq representative genome sequence available.
         For viruses, this is the RefSeq "genome neighbor" as defined in
         https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4383986/ and retrieved from
@@ -325,14 +338,14 @@ class Taxon(DatabaseService, ItemAttrAccess):
         The accessions for the genome can be accessed as follows:
 
             Taxon(123).best_refseq_taxon.refseq_representative_genome_accessions
-        '''
+        """
         raise NotImplementedError()
 
     @property
     def host(self) -> List[str]:
-        '''
+        """
         A text description of a symbiont host or hosts for this taxon's organism, if any.
-        '''
+        """
         return self._get_str_attr("host").split(",")
 
     @property
@@ -360,15 +373,15 @@ class Taxon(DatabaseService, ItemAttrAccess):
 
     @classmethod
     def distance(cls, taxa):
-        '''
+        """
         Phylogenetic distance between taxa as computed by WoL
-        '''
+        """
         raise NotImplementedError()
 
     def closest_taxon_with_refseq_genome(self):
-        '''
+        """
         Returns a taxon closest by phylogenetic distance as computed by WoL and with a refseq genome associated
-        '''
+        """
         pass
 
     @property
@@ -388,9 +401,9 @@ class Taxon(DatabaseService, ItemAttrAccess):
 
     @property
     def wikidata_url(self):
-        '''
+        """
         URL of the Wikidata web page representing this taxon.
-        '''
+        """
         if self.wikidata_id:
             return f"https://www.wikidata.org/wiki/{self.wikidata_id}"
 

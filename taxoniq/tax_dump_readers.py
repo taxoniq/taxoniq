@@ -39,7 +39,7 @@ class NodesReader(TaxDumpReader):
         ("inherited_PGC_flag", int, "flag (1 or 0); 1 if node inherits plastid gencode from parent"),
         ("specified_species", int, "flag (1 or 0); 1 if species in the node's lineage has formal name"),
         ("hydrogenosome_genetic_code", int, "see gencode.dmp file"),
-        ("inherited_HGC", int, "flag (1 or 0); 1 if node inherits hydrogenosome gencode from parent")
+        ("inherited_HGC", int, "flag (1 or 0); 1 if node inherits hydrogenosome gencode from parent"),
     ]
 
 
@@ -47,12 +47,13 @@ class TaxonomyNamesReader(TaxDumpReader):
     """
     See https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3245000/
     """
+
     table_name = "names"
     fields = [
         ("tax_id", int, "the id of node associated with this name"),
         ("name", str, "name itself"),
         ("unique_name", str, "the unique variant of this name if name not unique"),
-        ("name_class", str, "(synonym, common name, ...)", enum.Enum)
+        ("name_class", str, "(synonym, common name, ...)", enum.Enum),
     ]
 
 
@@ -62,7 +63,7 @@ class DivisionsReader(TaxDumpReader):
         ("division_id", int, "taxonomy database division id"),
         ("division_code", str, "GenBank division code (three characters) e.g. BCT, PLN, VRT, MAM, PRI.."),
         ("division_name", str),
-        ("comments", str)
+        ("comments", str),
     ]
 
 
@@ -73,22 +74,20 @@ class GeneticCodeReader(TaxDumpReader):
         ("abbreviation", str, "genetic code name abbreviation"),
         ("name", str, "genetic code name"),
         ("cde", str, "translation table for this genetic code"),
-        ("starts", str, "start codons for this genetic code")
+        ("starts", str, "start codons for this genetic code"),
     ]
 
 
 class DeletedNodesReader(TaxDumpReader):
     table_name = "delnodes"
-    fields = [
-        ("tax_id", int, "deleted node id")
-    ]
+    fields = [("tax_id", int, "deleted node id")]
 
 
 class MergedNodesReader(TaxDumpReader):
     table_name = "merged"
     fields = [
         ("old_tax_id", int, "id of nodes which has been merged"),
-        ("new_tax_id", int, "id of nodes which is result of merging")
+        ("new_tax_id", int, "id of nodes which is result of merging"),
     ]
 
 
@@ -100,10 +99,14 @@ class CitationsReader(TaxDumpReader):
         ("medline_id", int, "unique id in MedLine database (0 if not in MedLine)"),
         ("pubmed_id", int, "unique id in PubMed database (0 if not in PubMed)"),
         ("url", str, "URL associated with citation"),
-        ("text", str, """any text (usually article name and authors); The following characters are escaped in this text
+        (
+            "text",
+            str,
+            """any text (usually article name and authors); The following characters are escaped in this text
                          by a backslash: newline (appear as "\n"), tab character ("\t"), double quotes ('\"'),
-                         backslash character ("\\")."""),
-        ("taxid_list", str, "list of node ids separated by a single space")
+                         backslash character ("\\").""",
+        ),
+        ("taxid_list", str, "list of node ids separated by a single space"),
     ]
 
 
@@ -112,21 +115,22 @@ class TypeOfTypeReader(TaxDumpReader):
     fields = [
         ("type_name", str, "name of type material type"),
         ("synonyms", str, "alternative names for type material type"),
-        ("nomenclature", str, """Taxonomic Code of Nomenclature coded by a single letter:
+        (
+            "nomenclature",
+            str,
+            """Taxonomic Code of Nomenclature coded by a single letter:
                                  -- B - International Code for algae, fungi and plants (ICN), previously Botanical Code,
                                  -- P - International Code of Nomenclature of Prokaryotes (ICNP),
                                  -- Z - International Code of Zoological Nomenclature (ICZN),
-                                 -- V - International Committee on Taxonomy of Viruses (ICTV) virus classification."""),
-        ("description", str, "descriptive text")
+                                 -- V - International Committee on Taxonomy of Viruses (ICTV) virus classification.""",
+        ),
+        ("description", str, "descriptive text"),
     ]
 
 
 class HostReader(TaxDumpReader):
     table_name = "host"
-    fields = [
-        ("tax_id", str, "node id"),
-        ("potential_hosts", str, "theoretical host list separated by comma ','")
-    ]
+    fields = [("tax_id", str, "node id"), ("potential_hosts", str, "theoretical host list separated by comma ','")]
 
 
 class TypeMaterialReader(TaxDumpReader):
@@ -135,7 +139,7 @@ class TypeMaterialReader(TaxDumpReader):
         ("tax_id", int, "node id"),
         ("tax_name", str, "organism name type material is assigned to"),
         ("type", str, "type material type (see typeoftype.dmp)"),
-        ("identifier", str, "identifier in type material collection")
+        ("identifier", str, "identifier in type material collection"),
     ]
 
 
@@ -144,6 +148,7 @@ class RankedLineageReader(TaxDumpReader):
     Select ancestor names for well-established taxonomic ranks
     (species, genus, family, order, class, phylum, kingdom, superkingdom)
     """
+
     table_name = "rankedlineage"
     fields = [
         ("tax_id", int, "node id"),
@@ -155,7 +160,7 @@ class RankedLineageReader(TaxDumpReader):
         ("class_name", str, "class name when available"),
         ("phylum_name", str, "phylum name when available"),
         ("kingdom_name", str, "kingdom name when available"),
-        ("superkingdom_name", str, "superkingdom (domain) name when available")
+        ("superkingdom_name", str, "superkingdom (domain) name when available"),
     ]
 
 
@@ -164,8 +169,14 @@ class FullNameLineageReader(TaxDumpReader):
     fields = [
         ("tax_id", int, "node id"),
         ("tax_name", str, "scientific name of the organism"),
-        ("lineage", str, ("sequence of sncestor names separated by semicolon ';' denoting nodes' ancestors starting "
-                          "from the most distant one and ending with the immediate one"))
+        (
+            "lineage",
+            str,
+            (
+                "sequence of ancestor names separated by semicolon ';' denoting nodes' ancestors starting "
+                "from the most distant one and ending with the immediate one"
+            ),
+        ),
     ]
 
 
@@ -173,6 +184,12 @@ class TaxIdLineageReader(TaxDumpReader):
     table_name = "taxidlineage"
     fields = [
         ("tax_id", int, "node id"),
-        ("lineage", str, ("sequence of node ids separated by space denoting nodes' ancestors starting from the most "
-                          "distant one and ending with the immediate one"))
+        (
+            "lineage",
+            str,
+            (
+                "sequence of node ids separated by space denoting nodes' ancestors starting from the most "
+                "distant one and ending with the immediate one"
+            ),
+        ),
     ]

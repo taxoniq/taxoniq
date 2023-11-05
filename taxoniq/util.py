@@ -2,13 +2,13 @@ import io
 
 
 def byte_to_bases(x):
-    c = (x >> 4) & 0xf
-    f = x & 0xf
+    c = (x >> 4) & 0xF
+    f = x & 0xF
     cc = (c >> 2) & 0x3
     cf = c & 0x3
     fc = (f >> 2) & 0x3
     ff = f & 0x3
-    return b''.join(twobit2ascii[i] for i in (cc, cf, fc, ff))
+    return b"".join(twobit2ascii[i] for i in (cc, cf, fc, ff))
 
 
 twobit2ascii = {0: b"A", 1: b"C", 2: b"G", 3: b"T"}
@@ -27,12 +27,12 @@ class NcbiNa2Decoder:
             seq.write(twobit2ascii_byte_lut[byte])
         seq = seq.getvalue()
         if len(seq) + self.bases_seen > self.length:
-            seq = seq[:self.length - self.bases_seen]
+            seq = seq[: self.length - self.bases_seen]
         self.bases_seen += len(seq)
         return seq
 
     def flush(self) -> bytes:
-        return b''
+        return b""
 
 
 class NcbistdaaDecoder:

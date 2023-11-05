@@ -25,13 +25,16 @@ def print_json(data, output_format):
         if isinstance(i, Accession):
             return i.accession_id
         return repr(i)
+
     print(json.dumps(data, indent=4, default=formatter))
 
 
 def get_version():
-    return (f"Taxoniq {__version__}\n"
-            f"Taxonomy DB: {ncbi_taxon_db.db_timestamp} ({os.path.dirname(ncbi_taxon_db.__file__)})\n"
-            f"BLAST DB: {accession_db.db_timestamp} ({os.path.dirname(accession_db.__file__)})")
+    return (
+        f"Taxoniq {__version__}\n"
+        f"Taxonomy DB: {ncbi_taxon_db.db_timestamp} ({os.path.dirname(ncbi_taxon_db.__file__)})\n"
+        f"BLAST DB: {accession_db.db_timestamp} ({os.path.dirname(accession_db.__file__)})"
+    )
 
 
 class TaxoniqHelpFormatter(argparse.RawTextHelpFormatter):
@@ -47,13 +50,19 @@ parser = argparse.ArgumentParser(prog="taxoniq", description=__doc__, formatter_
 parser.add_argument("--version", action="version", version=get_version())
 parser.add_argument(
     "operation",
-    choices=[attr.replace("_", "-") for attr in dir(Taxon) if not attr.startswith("_")] + ["get-from-s3", "get-from-gs"]
+    choices=[attr.replace("_", "-") for attr in dir(Taxon) if not attr.startswith("_")]
+    + ["get-from-s3", "get-from-gs"],
 )
 parser.add_argument("--taxon-id", help="Numeric NCBI taxon ID")
 parser.add_argument("--accession-id", help="Alphanumeric NCBI sequence accession ID")
 parser.add_argument("--scientific-name", help="Unique scientific name of the taxon")
-parser.add_argument("--output-format", help=("Format string for Taxon or Accession objects, e.g. {scientific_name} "
-                                             "will return a taxon's scientific name for each taxon in the results"))
+parser.add_argument(
+    "--output-format",
+    help=(
+        "Format string for Taxon or Accession objects, e.g. {scientific_name} "
+        "will return a taxon's scientific name for each taxon in the results"
+    ),
+)
 
 
 def exit_not_found_err(args):
@@ -77,6 +86,7 @@ def cli(args=None):
         if not args.accession_id:
             raise argparse.ArgumentError(None, "This operation requires an accession ID.")
         if args.accession_id == "-":
+
             def fetch_seq(accession_id):
                 try:
                     acc = Accession(accession_id)
@@ -92,7 +102,7 @@ def cli(args=None):
                     print(">" + accession.accession_id)
                     sys.stdout.flush()
                     for line_start in range(0, len(sequence), 64):
-                        sys.stdout.buffer.write(sequence[line_start:line_start+64])
+                        sys.stdout.buffer.write(sequence[line_start : line_start + 64])
                         sys.stdout.buffer.write(b"\n")
                     sys.stdout.flush()
         else:
@@ -104,7 +114,7 @@ def cli(args=None):
                     sys.stdout.flush()
                     for chunk in fh.stream():
                         for line_start in range(0, len(chunk), 64):
-                            sys.stdout.buffer.write(chunk[line_start:line_start+64])
+                            sys.stdout.buffer.write(chunk[line_start : line_start + 64])
                             sys.stdout.buffer.write(b"\n")
                         sys.stdout.flush()
             except KeyError:
