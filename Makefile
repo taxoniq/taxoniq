@@ -1,6 +1,7 @@
 BLAST_DB_S3_BUCKET=ncbi-blast-databases
 BLAST_DB_GS_BUCKET=blast-db
 TAXDUMP_URL=https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz
+NCBI_BLASTPLUS_URL=https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.15.0+-x64-linux.tar.gz
 
 ifndef BLASTDB
 $(error Please set BLASTDB)
@@ -21,7 +22,7 @@ build-vendored-deps:
 	python3 setup.py build_ext --inplace
 
 build: version build-vendored-deps
-	if ! type blastdbcmd; then sudo apt-get install ncbi-blast+; fi
+	if ! type blastdbcmd; then curl $(NCBI_BLASTPLUS_URL) | tar -xvz; fi
 	if [[ ! -e wikipedia_extracts.json ]]; then $(MAKE) get-wikipedia-extracts; fi
 	pip3 install --upgrade awscli zstandard urllib3 twine db_packages/ncbi_taxon_db db_packages/ncbi_refseq_accession_*
 	if [[ ! -f nodes.dmp ]] || [[ $$(($$(date +%s) - $$(stat --format %Y nodes.dmp))) -gt $$((60*60*24)) ]]; then curl $(TAXDUMP_URL) | tar -xvz; fi
