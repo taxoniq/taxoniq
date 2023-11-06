@@ -12,7 +12,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="ncbi-refseq-accession-db",
-    version="2021.11.16",
+    version="2023.11.4",
     url="https://github.com/chanzuckerberg/taxoniq",
     license="MIT License",
     author="Andrey Kislyuk",

@@ -37,7 +37,7 @@ setup(
     install_requires=[
         "zstandard >= 0.15.1",
         "urllib3 >= 1.25.8",
-        "ncbi-taxon-db >= 2021.11.16"
+        "ncbi-taxon-db >= 2023.11.4"
     ],
     tests_require=["coverage", "flake8", "wheel"],
     packages=find_packages(exclude=["test"]),
