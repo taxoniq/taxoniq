@@ -37,7 +37,7 @@ endif
 	if [[ $$CI ]]; then rm -rf $(BLASTDB); fi
 
 lint:
-	flake8 $$(python3 setup.py --name)
+	ruff taxoniq
 
 test:
 	python3 -m unittest discover --start-directory test --top-level-directory . --verbose

@@ -1,21 +1,21 @@
-import os
-import sys
-import subprocess
+import io
 import json
 import logging
-import io
+import os
 import re
 import struct
+import subprocess
+import sys
 import warnings
-from concurrent.futures import ThreadPoolExecutor
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha256
 
-import zstandard
 import urllib3
+import zstandard
 
 from . import Accession, BLASTDatabase, RecordTrie
-from .tax_dump_readers import NodesReader, TaxonomyNamesReader, HostReader
+from .tax_dump_readers import HostReader, NodesReader, TaxonomyNamesReader
 
 logger = logging.getLogger(__name__)
 
@@ -542,11 +542,11 @@ def load_accession_info_from_blast_db(db_name):
             # See ncbi-blast-2.9.0+-src/c++/src/objtools/blast/seqdb_reader/seqdbfile.cpp
             format_version, sequence_type, volume = struct.unpack(">III", fh.read(12))
             assert format_version == 5
-            title, lmdb_file, create_date = (
+            title, _, create_date = (
                 read_blastdb_str(fh),
                 read_blastdb_str(fh),
                 read_blastdb_str(fh),
-            )  # noqa
+            )
             num_oids = struct.unpack(">I", fh.read(4))[0]
             volume_length = struct.unpack("<q", fh.read(8))[0]  # noqa: F841
             max_seq_length = struct.unpack(">I", fh.read(4))[0]  # noqa: F841
