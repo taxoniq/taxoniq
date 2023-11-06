@@ -46,7 +46,7 @@ docs:
 	pip3 install sphinx guzzle_sphinx_theme m2r2==0.2.7
 	sphinx-build docs docs/html
 
-install: clean version build
+install: version build
 	pip3 install .
 	pip3 install --upgrade db_packages/ncbi_taxon_db db_packages/ncbi_refseq_accession_*
 
