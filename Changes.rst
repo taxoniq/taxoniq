@@ -1,3 +1,10 @@
+Changes for v0.6.1 (2023-11-06)
+===============================
+
+-  Ensure input tax_id is stored as int
+
+-  NCBI has switched from ftp to http; update URLs accordingly
+
 Changes for v0.6.0 (2021-04-19)
 ===============================
 
