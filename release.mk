@@ -17,15 +17,10 @@ check-release-deps:
 	@if ! type -P pandoc; then echo "Please install pandoc"; exit 1; fi
 	@if ! type -P sponge; then echo "Please install moreutils"; exit 1; fi
 	@if ! type -P http; then echo "Please install httpie"; exit 1; fi
+	@if ! type -P gh; then echo "Please install gh"; exit 1; fi
 	@if ! type -P twine; then echo "Please install twine"; exit 1; fi
 
 release: check-release-deps
-	$(eval REMOTE=$(shell git remote get-url origin | perl -ne '/([^\/\:]+\/[^\/\:]+?)(\.git)?$$/; print $$1'))
-	$(eval GIT_USER=$(shell git config --get user.email))
-	$(eval GH_AUTH=$(shell if grep -q '@github.com' ~/.git-credentials; then echo $$(grep '@github.com' ~/.git-credentials | python3 -c 'import sys, urllib.parse as p; print(p.urlparse(sys.stdin.read()).netloc.split("@")[0])'); else echo $(GIT_USER); fi))
-	$(eval REPOS_API=https://api.github.com/repos/${REMOTE})
-	$(eval RELEASES_API=https://api.github.com/repos/${REMOTE}/releases)
-	$(eval UPLOADS_API=https://uploads.github.com/repos/${REMOTE}/releases)
 	git pull
 	@if [[ -z $$TAG ]]; then echo "Use release-{major,minor,patch}"; exit 1; fi
 	git clean -x --force $$(python3 setup.py --name)
@@ -41,11 +36,10 @@ release: check-release-deps
 	    git commit -m ${TAG}; \
 	    git tag --annotate --file $$TAG_MSG ${TAG}
 	git push --follow-tags
-	http --check-status --auth ${GH_AUTH} ${RELEASES_API} tag_name=${TAG} name=${TAG} \
-	    body="$$(git tag --list ${TAG} -n99 | perl -pe 's/^\S+\s*// if $$. == 1' | sed 's/^\s\s\s\s//')"
+	gh release create ${TAG} dist/*.whl --notes="$$(git tag --list ${TAG} -n99 | perl -pe 's/^\S+\s*// if $$. == 1' | sed 's/^\s\s\s\s//')"
 	@echo "Waiting for release build to start..."
 	sleep 30
-	while http --auth ${GH_AUTH} ${REPOS_API}/commits/${TAG}/check-runs | jq -e '.check_runs[] | select(.name|match("Build wheels"))|select(.conclusion != "success")' > /dev/null; do echo "Waiting for wheels to build..."; sleep 10; done
+	while gh api repos/{owner}/{repo}/commits/${TAG}/check-runs | jq -e '.check_runs[] | select(.name|match("Build wheels"))|select(.conclusion != "success")' > /dev/null; do echo "Waiting for wheels to build..."; sleep 10; done
 	-rm -rf build dist wheels-${TAG}.zip
 	sleep 10
 	http --download --follow --auth ${GH_AUTH} $$(http --auth ${GH_AUTH} $$(http --auth ${GH_AUTH} ${REPOS_API}/actions/artifacts | jq -r .artifacts[0].url) | jq -r .archive_download_url)
