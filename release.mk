@@ -48,12 +48,6 @@ release: check-release-deps
 	$(MAKE) release-docs
 
 release-db-packages: check-release-deps
-	$(eval REMOTE=$(shell git remote get-url origin | perl -ne '/([^\/\:]+\/.+?)(\.git)?$$/; print $$1'))
-	$(eval GIT_USER=$(shell git config --get user.email))
-	$(eval GH_AUTH=$(shell if grep -q '@github.com' ~/.git-credentials; then echo $$(grep '@github.com' ~/.git-credentials | python3 -c 'import sys, urllib.parse as p; print(p.urlparse(sys.stdin.read()).netloc.split("@")[0])'); else echo $(GIT_USER); fi))
-	$(eval REPOS_API=https://api.github.com/repos/${REMOTE})
-	$(eval RELEASES_API=https://api.github.com/repos/${REMOTE}/releases)
-	$(eval UPLOADS_API=https://uploads.github.com/repos/${REMOTE}/releases)
 	git pull
 	sed -i -e "s/20[0-9][0-9].[0-9]*.[0-9]*/$$(cat latest-dir | cut -f 1-3 -d - | sed -e 's/-/./g' -e 's/\.0/\./')/" setup.py db_packages/*/setup.py
 	git add setup.py db_packages/*/setup.py
@@ -62,7 +56,7 @@ release-db-packages: check-release-deps
 	-rm -rf db_packages/*/build db_packages/*/dist
 	for p in db_packages/*; do (cd $$p; python3 setup.py bdist_wheel); done
 	twine upload db_packages/ncbi_taxon_db/dist/*.whl db_packages/ncbi_refseq_*/dist/*.whl --verbose
-	for whl in db_packages/ncbi_genbank_*/dist/*.whl; do http --check-status --auth ${GH_AUTH} POST ${UPLOADS_API}/$$(http --auth ${GH_AUTH} ${RELEASES_API}/latest | jq .id)/assets name==$$(basename $$whl) name=="$$(basename $$whl)" label=="$$(basename $$whl)" < $$whl; done
+	gh release upload v$$(python3 setup.py --version) db_packages/ncbi_genbank_*/dist/*.whl
 
 release-pypi:
 	python3 setup.py sdist
