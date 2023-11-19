@@ -148,9 +148,14 @@ class Accession(DatabaseService, ItemAttrAccess):
         Returns a file-like object streaming the nucleotide sequence for this accession from the AWS S3 NCBI BLAST
         database mirror (https://registry.opendata.aws/ncbi-blast-databases/), if available.
         """
-        blast_db = f"{self.blast_db.name}.{str(self.blast_db_volume).rjust(2, '0')}"
-        if self.blast_db.name in {"ref_viruses_rep_genomes", "Betacoronavirus"}:
+        # FIXME: rjust value has to be 3 for some databases
+        volume_id_length = 2 if self.blast_db.name in {"ref_prok_rep_genomes", "Betacoronavirus"} else 3
+        blast_db = f"{self.blast_db.name}.{str(self.blast_db_volume).rjust(3, '0')}"
+        if self.blast_db.name == "ref_viruses_rep_genomes":
             blast_db = f"{self.blast_db.name}"
+        else:
+            volume_id_length = 2 if self.blast_db.name in {"ref_prok_rep_genomes", "Betacoronavirus"} else 3
+            blast_db = f"{self.blast_db.name}.{str(self.blast_db_volume).rjust(volume_id_length, '0')}"
         s3_url = f"https://{self.s3_host}/{accession_db.db_timestamp}/{blast_db}.nsq"
         headers = {"Range": f"bytes={self.db_offset}-{self.db_offset + (self.length // 4)}"}
         res = self.http.request("GET", s3_url, headers=headers, preload_content=False)
