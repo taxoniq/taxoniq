@@ -1,3 +1,8 @@
+Changes for v1.0.1 (2023-11-19)
+===============================
+
+-  Update formatting of blast db volumes
+
 Changes for v1.0.0 (2023-11-18)
 ===============================
 
