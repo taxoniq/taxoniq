@@ -14,7 +14,10 @@ taxoniq/version.py: setup.py
 get-wikipedia-extracts:
 	python3 -m taxoniq.build wikipedia-extracts
 
-build: version
+build: version build-indexes
+	python3 -m build
+
+build-indexes:
 #	FIXME: add blast+ to path after installing.
 #	Note: the new version is only required for building, not for using the indexes
 #	if ! type blastdbcmd; then curl $(NCBI_BLASTPLUS_URL) | tar -xvz; fi

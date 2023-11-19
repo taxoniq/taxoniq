@@ -13,7 +13,7 @@ setup(
     project_urls={
         "Documentation": "https://chanzuckerberg.github.io/taxoniq",
         "Source Code": "https://github.com/chanzuckerberg/taxoniq",
-        "Issue Tracker": "https://github.com/chanzuckerberg/taxoniq/issues"
+        "Issue Tracker": "https://github.com/chanzuckerberg/taxoniq/issues",
     },
     license="MIT License",
     author="Andrey Kislyuk",
@@ -25,7 +25,7 @@ setup(
         "marisa-trie >= 1.1.0",
         "zstandard >= 0.21.0",
         "urllib3 >= 1.26.5",
-        "ncbi-taxon-db >= 2023.11.4"
+        "ncbi-taxon-db >= 2023.11.4",
     ],
     tests_require=["coverage", "flake8", "wheel"],
     packages=find_packages(exclude=["test"]),
@@ -34,9 +34,7 @@ setup(
         # "nr_accession_db": []
     },
     entry_points={
-        "console_scripts": [
-            "taxoniq=taxoniq.cli:cli"
-        ],
+        "console_scripts": ["taxoniq=taxoniq.cli:cli"],
     },
     platforms=["MacOS X", "Posix"],
     include_package_data=True,
@@ -52,6 +50,6 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
-        "Topic :: Software Development :: Libraries :: Python Modules"
-    ]
+        "Topic :: Software Development :: Libraries :: Python Modules",
+    ],
 )

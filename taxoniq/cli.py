@@ -6,14 +6,14 @@ Run "taxoniq COMMAND --help" for command-specific usage and options.
 If an error occurs, Taxoniq will exit with code 4 when the error is due to a missing taxon or accession ID,
 or code 1 for all other errors.
 """
-import os
-import sys
+import argparse
 import json
 import logging
-import argparse
+import os
+import sys
 from concurrent.futures import ThreadPoolExecutor
 
-from . import Taxon, Accession, ncbi_taxon_db, accession_db, __version__
+from . import Accession, Taxon, __version__, accession_db, ncbi_taxon_db
 
 
 def print_json(data, output_format):

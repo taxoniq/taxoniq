@@ -1,4 +1,5 @@
 import os
+
 import guzzle_sphinx_theme
 
 project = "taxoniq"
@@ -24,6 +25,6 @@ html_sidebars = {
         "logo-text.html",
         # "globaltoc.html",
         "localtoc.html",
-        "searchbox.html"
+        "searchbox.html",
     ]
 }
