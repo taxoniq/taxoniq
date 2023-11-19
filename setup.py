@@ -8,7 +8,7 @@ from setuptools import Extension, find_packages, setup
 
 setup(
     name="taxoniq",
-    version="0.6.1",
+    version="1.0.0",
     url="https://github.com/chanzuckerberg/taxoniq",
     project_urls={
         "Documentation": "https://chanzuckerberg.github.io/taxoniq",

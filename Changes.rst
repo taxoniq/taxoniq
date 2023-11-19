@@ -1,3 +1,12 @@
+Changes for v1.0.0 (2023-11-18)
+===============================
+
+-  Unvendor marisa-trie
+
+-  Update data packages to version 2023-11-04
+
+-  Bump major version to signify stable release series (no API changes)
+
 Changes for v0.6.1 (2023-11-06)
 ===============================
 
