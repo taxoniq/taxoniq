@@ -17,7 +17,7 @@ jobs:
     runs-on: ${{matrix.os}}
     timeout-minutes: 30
     env:
-      CIBW_SKIP: "cp27-* pp*"
+      CIBW_SKIP: "cp36* cp37* pp*"
       CIBW_ARCHS_MACOS: "x86_64 arm64"
       CIBW_ARCHS_LINUX: "x86_64 i686 aarch64"
       CIBW_BEFORE_BUILD: "pip install cython && cython -3 marisa-trie/src/*.pyx marisa-trie/src/*.pxd --cplus"
