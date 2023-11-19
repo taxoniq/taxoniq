@@ -1,5 +1,2 @@
 include LICENSE* *.rst *.md
-recursive-include marisa-trie *.cpp *.pxd *.pyx
-recursive-include marisa-trie/marisa-trie/lib/marisa *.h *.cc
-recursive-include marisa-trie/marisa-trie/include/marisa *.h
 recursive-include test *

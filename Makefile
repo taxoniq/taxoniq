@@ -14,15 +14,10 @@ taxoniq/version.py: setup.py
 get-wikipedia-extracts:
 	python3 -m taxoniq.build wikipedia-extracts
 
-build-vendored-deps:
-	if [[ ! -d marisa-trie/marisa-trie ]]; then git submodule update --init --recursive; fi
-	pip3 install cython
-	cython -3 marisa-trie/src/*.pyx marisa-trie/src/*.pxd --cplus
-	python3 setup.py build_clib
-	python3 setup.py build_ext --inplace
-
-build: version build-vendored-deps
-	if ! type blastdbcmd; then curl $(NCBI_BLASTPLUS_URL) | tar -xvz; fi
+build: version
+#	FIXME: add blast+ to path after installing.
+#	Note: the new version is only required for building, not for using the indexes
+#	if ! type blastdbcmd; then curl $(NCBI_BLASTPLUS_URL) | tar -xvz; fi
 	if [[ ! -e wikipedia_extracts.json ]]; then $(MAKE) get-wikipedia-extracts; fi
 	pip3 install --upgrade awscli zstandard urllib3 twine db_packages/ncbi_taxon_db db_packages/ncbi_refseq_accession_*
 	if [[ ! -f nodes.dmp ]] || [[ $$(($$(date +%s) - $$(stat --format %Y nodes.dmp))) -gt $$((60*60*24)) ]]; then curl $(TAXDUMP_URL) | tar -xvz; fi
@@ -55,6 +50,6 @@ clean:
 	-rm -rf *.egg-info
 	-rm -rf db_packages/*/*/*.{zstd,marisa}
 
-.PHONY: lint test docs install clean build build-vendored-deps
+.PHONY: lint test docs install clean build
 
 include release.mk

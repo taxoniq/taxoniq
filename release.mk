@@ -37,13 +37,6 @@ release: check-release-deps
 	    git tag --annotate --file $$TAG_MSG ${TAG}
 	git push --follow-tags
 	gh release create ${TAG} dist/*.whl --notes="$$(git tag --list ${TAG} -n99 | perl -pe 's/^\S+\s*// if $$. == 1' | sed 's/^\s\s\s\s//')"
-	@echo "Waiting for release build to start..."
-	sleep 30
-	while gh api repos/{owner}/{repo}/commits/${TAG}/check-runs | jq -e '.check_runs[] | select(.name|match("Build wheels"))|select(.conclusion != "success")' > /dev/null; do echo "Waiting for wheels to build..."; sleep 10; done
-	-rm -rf build dist wheels-${TAG}.zip
-	sleep 10
-	http --download --follow --auth ${GH_AUTH} $$(http --auth ${GH_AUTH} $$(http --auth ${GH_AUTH} ${REPOS_API}/actions/artifacts | jq -r .artifacts[0].url) | jq -r .archive_download_url)
-	unzip -d dist wheels-${TAG}.zip
 	$(MAKE) release-pypi
 	$(MAKE) release-docs
 
@@ -63,7 +56,7 @@ release-pypi:
 	twine upload dist/*.tar.gz dist/*.whl --verbose
 
 release-docs:
-	$(MAKE) build-vendored-deps docs
+	$(MAKE) docs
 	-git branch -D gh-pages
 	git checkout -B gh-pages-stage
 	touch docs/html/.nojekyll
