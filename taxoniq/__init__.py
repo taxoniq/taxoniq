@@ -1,11 +1,10 @@
 import os
-from typing import List, Union
 from enum import Enum
-
-import urllib3
-import zstandard
+from typing import List, Union
 
 import ncbi_taxon_db
+import urllib3
+import zstandard
 
 try:
     import ncbi_genbank_accession_db as accession_db
@@ -20,9 +19,10 @@ try:
 except ImportError:
     import ncbi_refseq_accession_offsets as accession_offsets
 
+from marisa_trie import RecordTrie
+
 from .util import NcbiNa2Decoder
 from .version import __version__  # noqa
-from .vendored.marisa_trie import RecordTrie
 
 Rank = Enum(
     "Rank",
