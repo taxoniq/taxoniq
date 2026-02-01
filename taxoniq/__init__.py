@@ -30,7 +30,8 @@ Rank = Enum(
         "biotype clade class cohort family forma forma_specialis genotype genus infraclass infraorder isolate kingdom "
         "morph order parvorder pathogroup phylum section series serogroup serotype species species_group species_subgroup "
         "strain subclass subcohort subfamily subgenus subkingdom suborder subphylum subsection subspecies subtribe "
-        "subvariety superclass superfamily superkingdom superorder superphylum tribe varietas no_rank"
+        "subvariety superclass superfamily superkingdom superorder superphylum tribe varietas no_rank "
+        "domain realm acellular_root cellular_root"
     ),
 )
 
@@ -210,7 +211,8 @@ class Taxon(DatabaseService, ItemAttrAccess):
         _db_files[_string_index + "_pos"] = (RecordTrie("I"), os.path.join(_db_dir, _string_index + ".marisa"))
 
     common_ranks = {
-        Rank[i] for i in ("species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom")
+        Rank[i]
+        for i in ("species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom", "domain")
     }
 
     def __init__(self, tax_id: int = None, accession_id: str = None, scientific_name: str = None):
