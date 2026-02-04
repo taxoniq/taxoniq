@@ -1,9 +1,3 @@
-Changes for v1.0.4 (2026-02-01)
-===============================
-
-Add NCBI taxonomy ranks (domain, realm, acellular_root, cellular_root)
-for 2024+ taxdump compatibility
-
 Changes for v1.0.3 (2024-09-18)
 ===============================
 
