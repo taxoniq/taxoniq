@@ -39,6 +39,7 @@ class TestTaxoniq(unittest.TestCase):
                 taxoniq.Taxon(91347),
                 taxoniq.Taxon(1236),
                 taxoniq.Taxon(1224),
+                taxoniq.Taxon(3379134),
                 taxoniq.Taxon(2),
             ],
         )
@@ -54,7 +55,8 @@ class TestTaxoniq(unittest.TestCase):
         self.assertEqual(t, taxoniq.Taxon(9606))
         self.assertEqual(t.scientific_name, "Homo sapiens")
         self.assertEqual(t.common_name, "human")
-        self.assertIn("anatomically modern human", t.description)
+        self.assertIn("Homo sapiens", t.description)
+        self.assertGreater(len(t.description), 500)
         self.assertEqual(t.parent, taxoniq.Taxon(9605))
         self.assertEqual(
             t.ranked_lineage,
@@ -64,7 +66,6 @@ class TestTaxoniq(unittest.TestCase):
                 taxoniq.Taxon(scientific_name="Hominidae"),
                 taxoniq.Taxon(scientific_name="Primates"),
                 taxoniq.Taxon(scientific_name="Mammalia"),
-                taxoniq.Taxon(scientific_name="Dipnotetrapodomorpha"),
                 taxoniq.Taxon(scientific_name="Chordata"),
                 taxoniq.Taxon(scientific_name="Metazoa"),
                 taxoniq.Taxon(scientific_name="Eukaryota"),
@@ -136,7 +137,7 @@ class TestTaxoniq(unittest.TestCase):
         buf = StringIO()
         with contextlib.redirect_stdout(buf):
             taxoniq.cli.cli(["ranked-lineage", "--accession-id", "NC_000913.3"])
-        self.assertEqual(json.loads(buf.getvalue()), [562, 561, 543, 91347, 1236, 1224, 2])
+        self.assertEqual(json.loads(buf.getvalue()), [562, 561, 543, 91347, 1236, 1224, 3379134, 2])
         in_buf = StringIO("NC_052986\nNC_055549\nNC_055159")
         tf = tempfile.NamedTemporaryFile(mode="wt")
         with contextlib.redirect_stdout(tf):

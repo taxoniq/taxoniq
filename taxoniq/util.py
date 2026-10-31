@@ -20,19 +20,29 @@ class NcbiNa2Decoder:
     def __init__(self, length):
         self.length = length
         self.bases_seen = 0
+        self._tail = b""
 
-    def decompress(self, data: bytes) -> bytes:
+    def decompress(self, data: bytes, max_length: int = -1) -> bytes:
         seq = io.BytesIO()
         for byte in data:
             seq.write(twobit2ascii_byte_lut[byte])
-        seq = seq.getvalue()
+        seq = self._tail + seq.getvalue()
         if len(seq) + self.bases_seen > self.length:
             seq = seq[: self.length - self.bases_seen]
+        if max_length >= 0 and len(seq) > max_length:
+            seq, self._tail = seq[:max_length], seq[max_length:]
+        else:
+            self._tail = b""
         self.bases_seen += len(seq)
         return seq
 
+    @property
+    def has_unconsumed_tail(self) -> bool:
+        return bool(self._tail)
+
     def flush(self) -> bytes:
-        return b""
+        tail, self._tail = self._tail, b""
+        return tail
 
 
 class NcbistdaaDecoder:
