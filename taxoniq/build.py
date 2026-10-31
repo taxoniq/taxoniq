@@ -6,6 +6,7 @@ import re
 import struct
 import subprocess
 import sys
+import time
 import warnings
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
@@ -14,12 +15,23 @@ from hashlib import sha256
 import urllib3
 import zstandard
 
-from . import Accession, BLASTDatabase, RecordTrie
+from . import Accession, BLASTDatabase, RecordTrie, TaxoniqException
 from .tax_dump_readers import HostReader, NodesReader, TaxonomyNamesReader
 
 logger = logging.getLogger(__name__)
 
-http = urllib3.PoolManager(maxsize=min(64, os.cpu_count() + 8))
+
+class TaxoniqBuildError(TaxoniqException):
+    pass
+
+
+# Wikimedia APIs reject requests without a User-Agent (https://w.wiki/4wJS)
+http = urllib3.PoolManager(
+    maxsize=min(64, os.cpu_count() + 8),
+    headers={"User-Agent": "taxoniq-build (https://github.com/taxoniq/taxoniq)"},
+    timeout=urllib3.Timeout(connect=10, read=120),
+    retries=urllib3.Retry(total=5, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504]),
+)
 
 db_packages_dir = os.path.join(os.path.dirname(__file__), "..", "db_packages")
 
@@ -50,12 +62,14 @@ class WikipediaDescriptionClient:
         res = http.request("GET", url=f"https://{domain}/w/api.php", fields=params)
         assert res.status == 200, res
         res_doc = json.loads(res.data)
+        if "query" not in res_doc:
+            raise TaxoniqBuildError(f"Unexpected API response from {domain}: {res_doc}")
         for page in res_doc["query"]["pages"].values():
             assert page["ns"] == 0
             assert len(page["revisions"]) == 1
             yield page["pageid"], page["title"], page["revisions"][0]["*"]
 
-    def get_wikidata_linkshere(self, title, max_pages=sys.maxsize):
+    def get_wikidata_linkshere(self, title, max_pages=sys.maxsize, lhcontinue=None):
         params = dict(
             action="query",
             prop="linkshere",
@@ -65,11 +79,15 @@ class WikipediaDescriptionClient:
             format="json",
             titles=title,
         )
+        if lhcontinue is not None:
+            params.update({"continue": "||", "lhcontinue": str(lhcontinue)})
         n_pages = 0
         while True:
             res = http.request("GET", url="https://www.wikidata.org/w/api.php", fields=params)
             assert res.status == 200, res
             res_doc = json.loads(res.data)
+            if "query" not in res_doc:
+                raise TaxoniqBuildError(f"Unexpected API response from www.wikidata.org: {res_doc}")
             for page_links in res_doc["query"]["pages"].values():
                 for pageset_start in range(0, len(page_links["linkshere"]), 50):
                     yield [
@@ -78,6 +96,8 @@ class WikipediaDescriptionClient:
             n_pages += 1
             if n_pages >= max_pages or not res_doc.get("continue"):
                 break
+            # Logged so an interrupted run can be resumed with build_index(lhcontinue=...)
+            logger.info("Wikidata linkshere continuation: %s", res_doc["continue"])
             params.update(res_doc["continue"])
 
     def get_extracts(self, titles, domain="en.wikipedia.org", extract_chars=9000):
@@ -87,12 +107,23 @@ class WikipediaDescriptionClient:
             prop="extracts",
             exintro=True,
             exchars=extract_chars,
+            redirects=True,
             format="json",
             titles="|".join(titles),
         )
         res = http.request("GET", url=f"https://{domain}/w/api.php", fields=params)
         assert res.status == 200, res
         res_doc = json.loads(res.data)
+        if "query" not in res_doc:
+            raise TaxoniqBuildError(f"Unexpected API response from {domain}: {res_doc}")
+        requested_titles = defaultdict(list)
+        for title in titles:
+            resolved = title
+            for mapping in ("normalized", "redirects"):
+                for m in res_doc["query"].get(mapping, []):
+                    if m["from"] == resolved:
+                        resolved = m["to"]
+            requested_titles[resolved].append(title)
         for page in res_doc["query"]["pages"].values():
             if page["ns"] == 0 and "extract" in page and "title" in page:
                 page["extract"] = re.sub(
@@ -102,11 +133,28 @@ class WikipediaDescriptionClient:
                     flags=re.DOTALL,
                 )
                 page["extract"] = re.sub(r"\s*<!--.+", "", page["extract"], flags=re.DOTALL)
-                yield page
+                if page["title"] not in requested_titles:
+                    logger.warning("Extract for %s does not match any requested title", page["title"])
+                for title in requested_titles.get(page["title"], []):
+                    yield dict(page, title=title)
             else:
                 logger.error("Error retrieving extract: %s", page)
 
-    def process_pageid_set(self, pageid_set):
+    def process_pageid_set(self, pageid_set, attempts=3):
+        # Retry only transient network/API failures; anything else is a bug and should stop the build
+        for attempt in range(1, attempts + 1):
+            try:
+                return self._process_pageid_set(pageid_set)
+            except (urllib3.exceptions.HTTPError, TaxoniqBuildError, AssertionError, json.JSONDecodeError) as e:
+                if attempt == attempts:
+                    logger.error(
+                        "Giving up on page set starting at %s (%d pages): %s", pageid_set[0], len(pageid_set), e
+                    )
+                    return None
+                logger.warning("Attempt %d failed for page set starting at %s: %s", attempt, pageid_set[0], e)
+                time.sleep(5 * attempt)
+
+    def _process_pageid_set(self, pageid_set):
         tax_data_by_title = {}
         for pageid, title, page in self.get_wiki_pages(pageids="|".join(pageid_set)):
             page = json.loads(page)
@@ -117,9 +165,10 @@ class WikipediaDescriptionClient:
             # P31, instance of; P685, NCBI taxid
             if "P31" not in claims or "P685" not in claims:
                 continue
-            if claims["P31"][0]["mainsnak"]["datavalue"]["value"]["id"] != "Q16521":
+            # Claims with snaktype novalue/somevalue have no datavalue
+            if claims["P31"][0]["mainsnak"].get("datavalue", {}).get("value", {}).get("id") != "Q16521":
                 continue
-            if claims["P685"][0]["mainsnak"]["snaktype"] == "novalue":
+            if "datavalue" not in claims["P685"][0]["mainsnak"]:
                 continue
             taxid = claims["P685"][0]["mainsnak"]["datavalue"]["value"]
             tax_data_by_title[en_wiki_title] = dict(taxid=taxid, wikidata_id=title, en_wiki_title=en_wiki_title)
@@ -131,21 +180,34 @@ class WikipediaDescriptionClient:
         logger.debug("Processed %d pages", len(tax_data_by_title))
         return tax_data_by_title
 
-    def build_index(self, destdir, max_records=sys.maxsize, **threadpool_kwargs):
+    def build_index(self, destdir, max_records=sys.maxsize, lhcontinue=None, **threadpool_kwargs):
+        """
+        Write wikipedia_extracts.json to destdir. To resume an interrupted run, pass as lhcontinue the last
+        "Wikidata linkshere continuation" value logged before the last written record; records are then appended to
+        the existing file, and records near the resume point may be duplicated.
+        """
         index_filename = os.path.join(destdir, "wikipedia_extracts.json")
-        with open(index_filename, "w") as fh, ThreadPoolExecutor(**threadpool_kwargs) as executor:
-            n_records = 0
+        mode = "a" if lhcontinue is not None else "w"
+        with open(index_filename, mode) as fh, ThreadPoolExecutor(**threadpool_kwargs) as executor:
+            n_records, n_sets, n_failed_sets = 0, 0, 0
             # Q16521, taxon
             for tax_data_set in executor.map(
                 self.process_pageid_set,
-                self.get_wikidata_linkshere("Q16521", max_pages=max_records),
+                self.get_wikidata_linkshere("Q16521", max_pages=max_records, lhcontinue=lhcontinue),
             ):
+                if tax_data_set is None:
+                    n_failed_sets += 1
+                    tax_data_set = {}
                 for tax_datum in tax_data_set.values():
                     fh.write(json.dumps(tax_datum) + "\n")
                     n_records += 1
-                logger.debug("Wrote %d records", n_records)
+                n_sets += 1
+                if n_sets % 100 == 0:
+                    fh.flush()
+                    logger.info("Wrote %d records from %d page sets", n_records, n_sets)
                 if n_records >= max_records:
                     break
+        logger.info("Wrote %d records from %d page sets; %d page sets failed", n_records, n_sets, n_failed_sets)
         return index_filename
 
 
@@ -244,11 +306,26 @@ def fetch_file(url):
     download_cache = os.path.join(os.environ["BLASTDB"], "downloads")
     os.makedirs(download_cache, exist_ok=True)
     local_filename = os.path.join(download_cache, os.path.basename(url))
-    if not os.path.exists(local_filename):
-        with open(local_filename, "w") as fh:
+    # Earlier versions cached failed downloads as empty files
+    if not os.path.exists(local_filename) or os.path.getsize(local_filename) == 0:
+        try:
             res = http.request("GET", url)
-            assert res.status == 200
+        except urllib3.exceptions.HTTPError as e:
+            logger.warning("Error fetching %s: %s", url, e)
+            return None
+        if res.status != 200:
+            logger.warning("HTTP %d fetching %s", res.status, url)
+            return None
+        with open(local_filename + ".part", "w") as fh:
             fh.write(res.data.decode())
+        os.replace(local_filename + ".part", local_filename)
+    return local_filename
+
+
+def fetch_required_file(url):
+    local_filename = fetch_file(url)
+    if local_filename is None:
+        raise TaxoniqBuildError(f"Failed to fetch {url}")
     return local_filename
 
 
@@ -279,7 +356,7 @@ def get_virus_genome_data():
         "taxonomy_name",
         "segment_name",
     )
-    with open(fetch_file(virus_data_url)) as fh:
+    with open(fetch_required_file(virus_data_url)) as fh:
         for line in fh:
             if line.startswith("#"):
                 continue
@@ -390,7 +467,7 @@ def build_trees(blast_databases=os.environ.get("BLAST_DATABASES", "").split(), d
 
 
 def process_assembly_report(assembly_summary):
-    ftp_path = assembly_summary["ftp_path"]
+    ftp_path = assembly_summary["ftp_path"].rstrip("/")
     assembly_report_url = f"{ftp_path}/{os.path.basename(ftp_path)}_assembly_report.txt"
     assembly_report_fields = (
         "sequence_name",
@@ -405,8 +482,12 @@ def process_assembly_report(assembly_summary):
         "ucsc_style_name",
     )
     molecules = []
-    if ftp_path.startswith("https://ftp.ncbi.nlm.nih.gov"):
-        with open(fetch_file(assembly_report_url)) as assembly_report:
+    if not ftp_path.startswith("https://ftp.ncbi.nlm.nih.gov"):
+        warnings.warn(f"Invalid assembly summary: {assembly_summary}")
+        return molecules
+    report_filename = fetch_file(assembly_report_url)
+    if report_filename:
+        with open(report_filename) as assembly_report:
             for line in assembly_report:
                 if line.startswith("#"):
                     continue
@@ -415,8 +496,6 @@ def process_assembly_report(assembly_summary):
                     continue
                 molecule_summary.update(assembly_summary)
                 molecules.append(molecule_summary)
-    else:
-        warnings.warn(f"Invalid assembly summary: {assembly_summary}")
     return molecules
 
 
@@ -453,7 +532,7 @@ def index_refseq_accessions(destdir):
         "relation_to_type_material",
     )
     assembly_summaries = []
-    with open(fetch_file(assembly_summary_url)) as assembly_summary_fh:
+    with open(fetch_required_file(assembly_summary_url)) as assembly_summary_fh:
         for line in assembly_summary_fh:
             if line.startswith("#"):
                 continue
