@@ -9,7 +9,7 @@ description = "Taxoniq: Taxon Information Query - fast, offline querying of NCBI
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT License"}
-authors = [{name = "Andrey Kislyuk", email = "akislyuk@chanzuckerberg.com"}]
+authors = [{name = "Andrey Kislyuk", email = "kislyuk@gmail.com"}]
 dependencies = [
     "marisa-trie >= 1.1.0",
     "zstandard >= 0.21.0",
