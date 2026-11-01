@@ -211,8 +211,7 @@ class Taxon(DatabaseService, ItemAttrAccess):
         _db_files[_string_index + "_pos"] = (RecordTrie("I"), os.path.join(_db_dir, _string_index + ".marisa"))
 
     common_ranks = {
-        Rank[i]
-        for i in ("species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom", "domain")
+        Rank[i] for i in ("species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom", "domain")
     }
 
     def __init__(self, tax_id: int = None, accession_id: str = None, scientific_name: str = None):

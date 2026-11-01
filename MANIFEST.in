@@ -1,2 +1,4 @@
 include LICENSE* *.rst *.md
+include Makefile common.mk release.mk
 recursive-include test *
+recursive-include scripts *.py

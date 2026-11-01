@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ncbi-genbank-accession-offsets"
+version = "2024.9.07"
+description = "Taxoniq accession index for NCBI BLAST databases"
+
+[project.readme]
+text = "[Taxoniq](https://github.com/chanzuckerberg/taxoniq) accession index for the NCBI BLAST databases.\n\nThis package contains data from NCBI Taxonomy, NCBI GenBank, and NCBI RefSeq (Bethesda (MD): National Library of\nMedicine (US), National Center for Biotechnology Information). These data are released into the public domain under the\n[NCBI Public Domain Notice](https://github.com/chanzuckerberg/taxoniq/blob/main/LICENSE.NCBI)."
+content-type = "text/markdown"
+
+[project.license]
+text = "MIT License"
+
+[[project.authors]]
+name = "Andrey Kislyuk"
+email = "akislyuk@chanzuckerberg.com"
+
+[project.urls]
+Homepage = "https://github.com/chanzuckerberg/taxoniq"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["ncbi_genbank_accession_offsets*"]
+namespaces = false

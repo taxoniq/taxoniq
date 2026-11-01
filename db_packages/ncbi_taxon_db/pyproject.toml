@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ncbi-taxon-db"
+version = "2024.9.07"
+description = "Taxoniq index for NCBI Taxonomy database"
+dependencies = ["ncbi-refseq-accession-db == 2024.9.07", "ncbi-refseq-accession-lengths == 2024.9.07", "ncbi-refseq-accession-offsets == 2024.9.07"]
+
+[project.readme]
+text = "[Taxoniq](https://github.com/chanzuckerberg/taxoniq) index for the NCBI Taxonomy database.\n\nThis package contains data from NCBI Taxonomy, NCBI GenBank, and NCBI RefSeq (Bethesda (MD): National Library of\nMedicine (US), National Center for Biotechnology Information). These data are released into the public domain under the\n[NCBI Public Domain Notice](https://github.com/chanzuckerberg/taxoniq/blob/main/LICENSE.NCBI)."
+content-type = "text/markdown"
+
+[project.license]
+text = "MIT License"
+
+[[project.authors]]
+name = "Andrey Kislyuk"
+email = "akislyuk@chanzuckerberg.com"
+
+[project.urls]
+Homepage = "https://github.com/chanzuckerberg/taxoniq"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["ncbi_taxon_db*"]
+namespaces = false

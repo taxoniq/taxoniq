@@ -10,6 +10,8 @@ __pycache__/
 /build/
 /dist/
 /.eggs/
+/.venv/
+/taxoniq/version.py
 /db_packages/*/build/
 /db_packages/*/dist/
 
