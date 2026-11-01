@@ -1,15 +1,76 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "taxoniq"
+dynamic = ["version"]
+description = "Taxoniq: Taxon Information Query - fast, offline querying of NCBI Taxonomy and related data"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT License"}
+authors = [{name = "Andrey Kislyuk", email = "kislyuk@gmail.com"}]
+dependencies = [
+    "marisa-trie >= 1.1.0",
+    "zstandard >= 0.21.0",
+    "urllib3 >= 1.26.5",
+    "ncbi-taxon-db >= 2024.9.07",
+]
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: POSIX",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Homepage = "https://github.com/taxoniq/taxoniq"
+Documentation = "https://taxoniq.github.io/taxoniq"
+"Source Code" = "https://github.com/taxoniq/taxoniq"
+"Issue Tracker" = "https://github.com/taxoniq/taxoniq/issues"
+
+[project.scripts]
+taxoniq = "taxoniq.cli:cli"
+
+[project.optional-dependencies]
+tests = ["coverage", "flake8", "wheel", "build", "ruff"]
+docs = ["sphinx", "guzzle_sphinx_theme", "m2r2==0.2.7"]
+release = ["build", "twine", "tomlkit", "packaging"]
+
+[tool.setuptools]
+include-package-data = true
+platforms = ["MacOS X", "Posix"]
+
+[tool.setuptools.packages.find]
+include = ["taxoniq*"]
+namespaces = false
+
+[tool.setuptools_scm]
+version_file = "taxoniq/version.py"
+git_describe_command = "git describe --dirty --tags --long --match v[0-9]*.[0-9]*.[0-9]*"
+
 [tool.black]
 line-length = 120
-exclude = '(.+/version.py|.+/setup.py)'
+exclude = '(.+/version.py)'
 [tool.isort]
 profile = "black"
 line_length = 120
 skip_gitignore = true
-skip_glob = ["*/version.py", "*/setup.py"]
+skip_glob = ["*/version.py"]
 [tool.ruff]
 line-length=120
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
 ignore=["E401", "F401"]
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "test/test.py" = ["E402"]
-[mypy]
+[tool.mypy]
 cache_dir = "/tmp/mypy-cache"
