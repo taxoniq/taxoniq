@@ -17,7 +17,7 @@ text = "MIT License"
 
 [[project.authors]]
 name = "Andrey Kislyuk"
-email = "akislyuk@chanzuckerberg.com"
+email = "kislyuk@gmail.com"
 
 [project.urls]
 Homepage = "https://github.com/chanzuckerberg/taxoniq"
