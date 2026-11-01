@@ -18,7 +18,7 @@ html_theme_path = guzzle_sphinx_theme.html_theme_path()
 html_theme = "guzzle_sphinx_theme"
 html_theme_options = {
     "project_nav_name": project,
-    "projectlink": "https://github.com/chanzuckerberg/" + project,
+    "projectlink": "https://github.com/taxoniq/" + project,
 }
 html_sidebars = {
     "**": [

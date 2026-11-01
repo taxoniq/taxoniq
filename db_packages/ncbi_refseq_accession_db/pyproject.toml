@@ -8,7 +8,7 @@ version = "2024.9.07"
 description = "Taxoniq accession index for NCBI BLAST databases"
 
 [project.readme]
-text = "[Taxoniq](https://github.com/chanzuckerberg/taxoniq) accession index for the NCBI BLAST databases.\n\nThis package contains data from NCBI Taxonomy, NCBI GenBank, and NCBI RefSeq (Bethesda (MD): National Library of\nMedicine (US), National Center for Biotechnology Information). These data are released into the public domain under the\n[NCBI Public Domain Notice](https://github.com/chanzuckerberg/taxoniq/blob/main/LICENSE.NCBI)."
+text = "[Taxoniq](https://github.com/taxoniq/taxoniq) accession index for the NCBI BLAST databases.\n\nThis package contains data from NCBI Taxonomy, NCBI GenBank, and NCBI RefSeq (Bethesda (MD): National Library of\nMedicine (US), National Center for Biotechnology Information). These data are released into the public domain under the\n[NCBI Public Domain Notice](https://github.com/taxoniq/taxoniq/blob/main/LICENSE.NCBI)."
 content-type = "text/markdown"
 
 [project.license]
@@ -19,7 +19,7 @@ name = "Andrey Kislyuk"
 email = "kislyuk@gmail.com"
 
 [project.urls]
-Homepage = "https://github.com/chanzuckerberg/taxoniq"
+Homepage = "https://github.com/taxoniq/taxoniq"
 
 [tool.setuptools]
 include-package-data = true
