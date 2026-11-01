@@ -221,26 +221,6 @@ kraken2 --paired nohuman_1.fastq nohuman_2.fastq --classified-out 'classified#.f
 ## Cookbook
 In progress
 
-## Development and releases
-
-Install the development tools with `pip install -e '.[tests,release]'`. Build the library's source distribution and wheel
-with `make build`, or build and install it with `make install`. The library version comes from Git tags through
-`setuptools-scm`; builds generate `taxoniq/version.py`. Use a checkout with tags and full history when building releases.
-
-Database indexes are built separately with `BLASTDB=/path/to/blast-db make install-db-packages`. This downloads the
-source databases, builds the indexes, and installs the local data packages. Their versions continue to follow the
-NCBI snapshot date. Run `make test` after installing the indexes.
-
-From `main`, use `make release-patch`, `make release-minor`, or `make release-major` to update the changelog, tag and push
-the release, and create a GitHub release with the library wheel. The shared `common.mk` comes from
-[http-message-signatures](https://github.com/pyauth/http-message-signatures/blob/main/common.mk).
-The release GitHub Actions workflow builds and publishes the library to PyPI using trusted publishing. Configure the
-PyPI trusted publisher for `taxoniq/taxoniq`, workflow `release.yml`, and GitHub environment `release` before releasing.
-
-After building new indexes, use `make release-db-packages` to update the date-based versions from `latest-dir`, publish
-the taxonomy and RefSeq wheels to PyPI with Twine, and attach the GenBank wheels to the latest version-tagged GitHub
-release. Publish documentation separately with `make release-docs TAG=vX.Y.Z`.
-
 ## Links
 * [Project home page (GitHub)](https://github.com/taxoniq/taxoniq)
 * [Documentation](https://taxoniq.github.io/taxoniq/)
