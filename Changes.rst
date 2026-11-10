@@ -1,3 +1,13 @@
+Changes for v1.0.4 (2026-11-10)
+===============================
+
+-  Support NCBI taxonomy ranks introduced in 2024 (domain, realm,
+   acellular_root, cellular_root)
+-  Fix full index build against current NCBI, Wikimedia and urllib3
+   (#31)
+-  Migrate packaging to pyproject.toml and shared release tooling (#32)
+-  Update repository links to the taxoniq organization
+
 Changes for v1.0.3 (2024-09-18)
 ===============================
 
