@@ -5,6 +5,12 @@ on: [push, pull_request]
 env:
   BLASTDB: blast-db
   BLAST_DATABASES: "ref_viruses_rep_genomes ref_prok_rep_genomes"
+  # The full ref_prok_rep_genomes download (about 25 GB) no longer fits on the runner, so CI fetches only the
+  # database-level index files plus the one volume holding the E. coli test accession NC_000913.3. If NCBI moves
+  # that accession to another volume, the tests fail on NC_000913.3; update the volume number here. To find it, with
+  # the full database downloaded: for v in ref_prok_rep_genomes.??; do blastdbcmd -db $v -entry NC_000913.3 \
+  #   -outfmt "$v %a" 2>/dev/null; done
+  BLAST_DB_INCLUDES: "ref_viruses_rep_genomes* ref_prok_rep_genomes.n* ref_prok_rep_genomes.19.*"
   FETCH_REFSEQ_ASSEMBLIES: "Mumps orthorubulavirus"
 
 jobs:

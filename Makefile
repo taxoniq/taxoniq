@@ -4,7 +4,7 @@ TAXDUMP_URL=https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.ta
 # Note: The newest BLAST+ version is only required for building, not for using the indexes
 NCBI_BLASTPLUS_URL=https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.15.0+-x64-linux.tar.gz
 LAUNCHPAD_BLASTPLUS_URL=https://launchpad.net/ubuntu/+archive/primary/+files/ncbi-blast+_2.16.0+ds-6_amd64.deb
-BLAST_DATABASES=ref_viruses_rep_genomes ref_prok_rep_genomes ref_euk_rep_genomes Betacoronavirus core_nt
+BLAST_DATABASES ?= ref_viruses_rep_genomes ref_prok_rep_genomes ref_euk_rep_genomes Betacoronavirus core_nt
 
 .DEFAULT_GOAL := build
 
@@ -24,7 +24,7 @@ build-indexes:
 	mkdir -p $(BLASTDB)
 	aws s3 cp --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/latest-dir .
 ifdef BLAST_DATABASES
-	aws s3 sync --quiet --size-only --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/$$(cat latest-dir)/ $(BLASTDB)/ --exclude "*" $$(for db in $(BLAST_DATABASES); do echo --include "$$db*"; done)
+	aws s3 sync --quiet --size-only --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/$$(cat latest-dir)/ $(BLASTDB)/ --exclude "*" $(foreach p,$(or $(BLAST_DB_INCLUDES),$(addsuffix *,$(BLAST_DATABASES))),--include '$(p)')
 else
 	aws s3 sync --size-only --no-sign-request s3://$(BLAST_DB_S3_BUCKET)/$$(cat latest-dir)/ $(BLASTDB)/ --exclude "*.p*" --exclude "env_*" --exclude "patnt*" --exclude "refseq_rna*"
 endif
