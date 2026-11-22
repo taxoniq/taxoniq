@@ -4,6 +4,13 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
+  # The data packages are too big to build on a runner, so `make release-db-packages` builds them locally and attaches
+  # the wheels to a db-YYYY.M.D GitHub release. Dispatching this workflow with that tag publishes them to PyPI.
+  workflow_dispatch:
+    inputs:
+      db-release-tag:
+        description: 'GitHub release holding the data package wheels (e.g. db-2026.10.22)'
+        required: true
 
 permissions:
   contents: read
@@ -11,6 +18,7 @@ permissions:
 jobs:
   pypi-publish:
     name: Build and upload release to PyPI
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -25,5 +33,36 @@ jobs:
           python-version: '3.12'
       - run: pip install build
       - run: python -m build
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  pypi-publish-db:
+    name: Upload data package wheels to PyPI
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Download wheels from the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.db-release-tag }}
+        run: |
+          if [[ ! $TAG =~ ^db-[0-9]{4}\.[0-9]{1,2}\.[0-9]{1,2}$ ]]; then
+            echo "::error::Expected a tag like db-2026.10.22, got '$TAG'"
+            exit 1
+          fi
+          version=${TAG#db-}
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir dist \
+            --pattern "ncbi_taxon_db-$version-*.whl" --pattern "ncbi_refseq_accession_*-$version-*.whl"
+          for p in ncbi_taxon_db ncbi_refseq_accession_db ncbi_refseq_accession_lengths ncbi_refseq_accession_offsets; do
+            if [[ ! -f dist/$p-$version-py3-none-any.whl ]]; then
+              echo "::error::Release $TAG has no $p-$version wheel"
+              exit 1
+            fi
+          done
+          ls -l dist
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
