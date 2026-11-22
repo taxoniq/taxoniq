@@ -14,7 +14,7 @@ dependencies = [
     "marisa-trie >= 1.1.0",
     "zstandard >= 0.21.0",
     "urllib3 >= 1.26.5",
-    "ncbi-taxon-db >= 2024.9.07",
+    "ncbi-taxon-db >= 2026.10.22",
 ]
 classifiers = [
     "Intended Audience :: Developers",

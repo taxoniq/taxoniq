@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ncbi-genbank-accession-lengths"
-version = "2024.9.07"
+version = "2026.10.22"
 description = "Taxoniq accession index for NCBI BLAST databases"
 
 [project.readme]
